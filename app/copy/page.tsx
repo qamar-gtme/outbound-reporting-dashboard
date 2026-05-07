@@ -1,4 +1,6 @@
 import { fetchTable } from "@/lib/supabase";
+import { SectionHead, SubHead } from "@/components/SectionHead";
+import { Stat } from "@/components/Stat";
 
 export const revalidate = 60;
 
@@ -14,35 +16,45 @@ export default async function CopyPage() {
 
   return (
     <div>
-      <h1 className="font-display font-bold text-4xl mb-3">Copy Angles &amp; Tracking</h1>
-      <p className="text-ink2 max-w-3xl mb-6">
-        {angles.length} variants across {Object.keys(byICP).length} ICPs. Detail per ICP including frameworks, hooks, full bodies, voicemails, objections in the deep report (HTML in <code className="text-warn">opencx-deliverables/</code>).
-      </p>
+      <SectionHead
+        eyebrow="Copy"
+        title="Angles &amp; tracking."
+        description="Variants per ICP across email, LinkedIn, voice. Hooks, frameworks, and live performance. Full deep dive in companion HTML report."
+        source="copy_angles + copy_performance"
+      />
+
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
+        <Stat n={angles.length} label="variants" />
+        <Stat n={Object.keys(byICP).length} label="ICPs covered" />
+        <Stat n={angles.filter((a: any) => a.status === "winning").length} label="winning" />
+        <Stat n={angles.filter((a: any) => a.status === "testing").length} label="in test" tone="warn" />
+      </div>
 
       {Object.entries(byICP).map(([icp, rows]) => (
         <section key={icp} className="mb-10">
-          <h2 className="font-display font-bold text-2xl mb-3 pb-2 border-b border-border">{icp}</h2>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead><tr>
-                {["Persona", "Channel", "Angle", "Variant", "Hook", "Sends", "Replies", "Mtgs", "Status"].map(h => (
-                  <th key={h} className="text-left font-display font-bold text-[11px] uppercase tracking-wider text-ink2 bg-panel px-3 py-2 border-b border-border">{h}</th>
-                ))}
-              </tr></thead>
+          <SubHead title={icp} hint={`${rows.length} variants`} />
+          <div className="card overflow-hidden">
+            <table className="data">
+              <thead><tr><th>Persona</th><th>Channel</th><th>Angle</th><th>Variant / Hook</th><th className="text-right">Sends</th><th className="text-right">Replies</th><th className="text-right">Mtgs</th><th>Status</th></tr></thead>
               <tbody>
-                {rows.map((a: any, i: number) => {
+                {rows.map((a: any) => {
                   const p = perfMap[a.id] || {};
                   return (
-                    <tr key={a.id} className={i % 2 ? "bg-panel2" : ""}>
-                      <td className="px-3 py-2 border-b border-border">{a.persona}</td>
-                      <td className="px-3 py-2 border-b border-border font-mono text-xs">{a.channel}</td>
-                      <td className="px-3 py-2 border-b border-border"><b>{a.angle_name}</b><div className="text-xs text-muted">{a.positioning}</div></td>
-                      <td className="px-3 py-2 border-b border-border">{a.variant_label}</td>
-                      <td className="px-3 py-2 border-b border-border italic text-accent text-xs">{a.hook}</td>
-                      <td className="px-3 py-2 border-b border-border font-mono">{p.sends ?? "—"}</td>
-                      <td className="px-3 py-2 border-b border-border font-mono">{p.replies ?? "—"}</td>
-                      <td className="px-3 py-2 border-b border-border font-mono">{p.meetings ?? "—"}</td>
-                      <td className="px-3 py-2 border-b border-border"><span className="font-mono text-xs uppercase bg-accent/20 text-accent px-2 py-0.5 rounded">{a.status}</span></td>
+                    <tr key={a.id}>
+                      <td className="text-ink2">{a.persona}</td>
+                      <td className="font-num text-muted text-[11px]">{a.channel}</td>
+                      <td>
+                        <div className="font-medium text-ink">{a.angle_name}</div>
+                        <div className="text-[11px] text-muted mt-0.5">{a.positioning}</div>
+                      </td>
+                      <td className="max-w-sm">
+                        <div className="text-[12px] font-medium text-ink2">{a.variant_label}</div>
+                        <div className="text-[12px] italic text-accent mt-0.5">{a.hook}</div>
+                      </td>
+                      <td className="text-right font-num">{p.sends ?? "0"}</td>
+                      <td className="text-right font-num">{p.replies ?? "0"}</td>
+                      <td className="text-right font-num">{p.meetings ?? "0"}</td>
+                      <td><span className="kbd uppercase">{a.status}</span></td>
                     </tr>
                   );
                 })}

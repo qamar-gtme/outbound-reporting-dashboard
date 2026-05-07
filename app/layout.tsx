@@ -3,36 +3,73 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "open.cx — Outbound Live Dashboard",
-  description: "Real-time outbound reporting for open.cx — SDR + Smartlead + TAM",
+  title: "open.cx outbound",
+  description: "Outbound reporting for open.cx — SDR, Smartlead, TAM",
 };
+
+const NAV = [
+  { href: "/", label: "Overview" },
+  { href: "/sdr", label: "SDR" },
+  { href: "/smartlead", label: "Smartlead" },
+  { href: "/tam", label: "TAM" },
+  { href: "/tiers", label: "Tiers" },
+  { href: "/copy", label: "Copy" },
+  { href: "/intent", label: "Intent" },
+];
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
       <head>
         <link rel="preconnect" href="https://api.fontshare.com" />
-        <link href="https://api.fontshare.com/v2/css?f[]=supreme@500,700&f[]=erode@400,500&f[]=martian-mono@400&display=swap" rel="stylesheet" />
+        <link
+          href="https://api.fontshare.com/v2/css?f[]=switzer@500,600,700,400&f[]=sentient@400,500,700,400i,500i,700i&f[]=erode@400,500&display=swap"
+          rel="stylesheet"
+        />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Martian+Mono:wght@400;500;600&display=swap"
+          rel="stylesheet"
+        />
       </head>
-      <body>
-        <header className="border-b border-border">
-          <div className="max-w-[1400px] mx-auto px-7 py-4 flex items-center gap-6">
-            <Link href="/" className="font-display font-bold text-xl text-ink">
-              open.cx <span className="text-accent">/</span> outbound
+      <body className="min-h-screen">
+        <header className="sticky top-0 z-40 backdrop-blur-md bg-bg/80 border-b border-line">
+          <div className="max-w-[1440px] mx-auto px-8 py-4 flex items-center gap-10">
+            <Link href="/" className="flex items-center gap-2.5 group">
+              <span className="block w-2 h-2 rounded-full bg-accent group-hover:bg-warn transition" />
+              <span className="font-display italic text-[19px] text-ink leading-none">
+                open.cx
+              </span>
+              <span className="font-num text-[10px] uppercase tracking-[0.18em] text-dim">
+                outbound
+              </span>
             </Link>
-            <nav className="flex gap-4 text-sm font-mono text-muted">
-              <Link href="/" className="hover:text-accent">overview</Link>
-              <Link href="/sdr" className="hover:text-accent">sdr</Link>
-              <Link href="/smartlead" className="hover:text-warn">smartlead</Link>
-              <Link href="/tam" className="hover:text-info">tam</Link>
-              <Link href="/tiers" className="hover:text-accent">tiers</Link>
-              <Link href="/copy" className="hover:text-accent">copy</Link>
-              <Link href="/intent" className="hover:text-accent">intent</Link>
+            <nav className="flex gap-1 text-[13px]">
+              {NAV.map((n) => (
+                <Link
+                  key={n.href}
+                  href={n.href}
+                  className="px-3 py-1.5 rounded text-muted hover:text-ink hover:bg-surface2 transition"
+                >
+                  {n.label}
+                </Link>
+              ))}
             </nav>
-            <div className="ml-auto text-xs font-mono text-dim">live · supabase</div>
+            <div className="ml-auto flex items-center gap-3">
+              <span className="kbd flex items-center gap-1.5">
+                <span className="block w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
+                live
+              </span>
+              <span className="kbd">supabase</span>
+            </div>
           </div>
         </header>
-        <main className="max-w-[1400px] mx-auto px-7 py-10">{children}</main>
+        <main className="max-w-[1440px] mx-auto px-8 py-12">{children}</main>
+        <footer className="border-t border-line mt-20">
+          <div className="max-w-[1440px] mx-auto px-8 py-6 flex items-center justify-between text-[11px] text-dim font-num">
+            <span>open.cx outbound, internal reporting</span>
+            <span>data: supabase / hubspot / salesfinity / smartlead</span>
+          </div>
+        </footer>
       </body>
     </html>
   );

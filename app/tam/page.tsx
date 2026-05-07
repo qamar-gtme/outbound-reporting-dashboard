@@ -1,4 +1,6 @@
 import { fetchTable } from "@/lib/supabase";
+import { Stat } from "@/components/Stat";
+import { SectionHead, SubHead } from "@/components/SectionHead";
 
 export const revalidate = 60;
 
@@ -16,46 +18,85 @@ export default async function TAMPage() {
 
   return (
     <div>
-      <div className="flex items-baseline gap-3 mb-2">
-        <h1 className="font-display font-bold text-3xl text-info">Section C — TAM Coverage</h1>
-        <span className="font-mono text-[10px] uppercase tracking-wider text-dim bg-panel px-2 py-1 rounded">source: tam_*</span>
+      <SectionHead
+        eyebrow="Section C"
+        title="TAM Coverage"
+        description="Hierarchical company count map across mega industries, sub industries, and verticals. Counts are mid range estimates from Census SUSB plus sector employment data."
+        source="tam_*"
+        accent="info"
+      />
+
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-2">
+        <Stat n={totalCos} label="addressable cos US" tone="info" />
+        <Stat n={inds.length} label="L1 industries" tone="info" />
+        <Stat n={subs.length} label="L2 sub industries" tone="info" />
+        <Stat n={verts.length} label="L3 verticals" tone="info" />
       </div>
-      <p className="text-ink2 max-w-3xl mb-6">
-        Hierarchical company-count map: {inds.length} industries → {subs.length} sub-industries → {verts.length} verticals.
-        Total US firms 50+ emp (CX-sellable): <span className="text-info">{totalCos.toLocaleString()}</span>.
-      </p>
 
-      <h2 className="font-display font-bold text-xl mt-8 mb-3 pb-2 border-b border-border">Level 1 — Industries</h2>
-      <Tbl head={["Industry", "Cos US", "Competitor density", "Dials", "Convos"]}
-        rows={inds.map((ti: any) => {
-          const dialed = Object.values(indDials).filter((d: any) => (ti.name || "").toLowerCase().split(" ")[0] === (d.industry || "").toLowerCase().split(" ")[0]).reduce((a: number, d: any) => a + (d.dials || 0), 0);
-          const convs = Object.values(indDials).filter((d: any) => (ti.name || "").toLowerCase().split(" ")[0] === (d.industry || "").toLowerCase().split(" ")[0]).reduce((a: number, d: any) => a + (d.conversations || 0), 0);
-          return [<b key="n">{ti.name}</b>, num(ti.company_count_us), num(ti.competitor_density), num(dialed), num(convs)];
-        })}
-      />
+      <SubHead title="Level 1 industries" />
+      <div className="card overflow-hidden mb-2">
+        <table className="data">
+          <thead><tr><th>Industry</th><th className="text-right">Cos US</th><th className="text-right">Competitor density</th><th className="text-right">Dials</th><th className="text-right">Convos</th></tr></thead>
+          <tbody>
+            {inds.map((ti: any, i: number) => {
+              const dialed = Object.values(indDials).filter((d: any) => (ti.name || "").toLowerCase().split(" ")[0] === (d.industry || "").toLowerCase().split(" ")[0]).reduce((a: number, d: any) => a + (d.dials || 0), 0);
+              const convs = Object.values(indDials).filter((d: any) => (ti.name || "").toLowerCase().split(" ")[0] === (d.industry || "").toLowerCase().split(" ")[0]).reduce((a: number, d: any) => a + (d.conversations || 0), 0);
+              return (
+                <tr key={i}>
+                  <td className="font-medium text-ink">{ti.name}</td>
+                  <td className="text-right font-num">{num(ti.company_count_us)}</td>
+                  <td className="text-right font-num text-muted">{num(ti.competitor_density)}</td>
+                  <td className="text-right font-num">{num(dialed)}</td>
+                  <td className="text-right font-num text-accent">{num(convs)}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
 
-      <h2 className="font-display font-bold text-xl mt-10 mb-3 pb-2 border-b border-border">Level 2 — Sub-industries (top 60)</h2>
-      <Tbl head={["Sub-industry", "NAICS", "Cos US", "AI fit", "Competitor density"]}
-        rows={subs.map((s: any) => [<b key="n">{s.name}</b>, s.naics, num(s.company_count_us), s.ai_cx_fit, num(s.competitor_density)])}
-      />
+      <SubHead title="Level 2 sub industries" hint="top 60 by company count" />
+      <div className="card overflow-hidden mb-2">
+        <table className="data">
+          <thead><tr><th>Sub industry</th><th>NAICS</th><th className="text-right">Cos US</th><th>AI fit</th><th className="text-right">Comp density</th></tr></thead>
+          <tbody>
+            {subs.map((s: any, i: number) => (
+              <tr key={i}>
+                <td className="font-medium text-ink">{s.name}</td>
+                <td className="font-num text-muted">{s.naics || "·"}</td>
+                <td className="text-right font-num">{num(s.company_count_us)}</td>
+                <td>{aiFit(s.ai_cx_fit)}</td>
+                <td className="text-right font-num text-muted">{num(s.competitor_density)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
 
-      <h2 className="font-display font-bold text-xl mt-10 mb-3 pb-2 border-b border-border">Level 3 — Verticals (top 60)</h2>
-      <Tbl head={["Vertical", "Cos US", "AI fit", "Competitor density", "Top players"]}
-        rows={verts.map((v: any) => [<b key="n">{v.name}</b>, num(v.company_count_us), v.ai_cx_fit, num(v.competitor_density), <span key="t" className="text-xs text-muted">{(v.top_players || []).slice(0, 4).join(", ")}</span>])}
-      />
+      <SubHead title="Level 3 verticals" hint="top 60 by company count" />
+      <div className="card overflow-hidden">
+        <table className="data">
+          <thead><tr><th>Vertical</th><th className="text-right">Cos US</th><th>AI fit</th><th className="text-right">Comp density</th><th>Top players</th></tr></thead>
+          <tbody>
+            {verts.map((v: any, i: number) => (
+              <tr key={i}>
+                <td className="font-medium text-ink">{v.name}</td>
+                <td className="text-right font-num">{num(v.company_count_us)}</td>
+                <td>{aiFit(v.ai_cx_fit)}</td>
+                <td className="text-right font-num text-muted">{num(v.competitor_density)}</td>
+                <td className="text-[12px] text-muted">{(v.top_players || []).slice(0, 4).join(", ") || "·"}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
 
-function num(v: any) { return v != null ? Number(v).toLocaleString() : "—"; }
-
-function Tbl({ head, rows }: { head: string[]; rows: any[][] }) {
-  return (
-    <div className="overflow-x-auto mb-6">
-      <table className="w-full text-sm">
-        <thead><tr>{head.map((h) => <th key={h} className="text-left font-display font-bold text-[11px] uppercase tracking-wider text-ink2 bg-panel px-3 py-2 border-b border-border">{h}</th>)}</tr></thead>
-        <tbody>{rows.map((r, i) => <tr key={i} className={i % 2 ? "bg-panel2" : ""}>{r.map((c, j) => <td key={j} className="px-3 py-2 border-b border-border align-top">{c == null || c === "" ? "—" : c}</td>)}</tr>)}</tbody>
-      </table>
-    </div>
-  );
+function num(v: any) { return v != null ? Number(v).toLocaleString() : "·"; }
+function aiFit(f: string | null) {
+  const map: Record<string, string> = { HIGH: "text-accent", MED: "text-warn", LOW: "text-loss", SKIP: "text-dim" };
+  if (!f) return <span className="text-dim">·</span>;
+  return <span className={`text-[11px] font-medium ${map[f] || "text-muted"}`}>{f}</span>;
 }

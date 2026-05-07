@@ -2,17 +2,93 @@
 @tailwind components;
 @tailwind utilities;
 
-html,
+html {
+  background: #08090d;
+  color-scheme: dark;
+}
+
 body {
-  background: #0b0c10;
-  color: #e6e8ee;
-  font-family: "Erode", Georgia, serif;
+  background:
+    radial-gradient(1200px 600px at 80% -10%, rgba(95, 215, 168, 0.06) 0%, transparent 60%),
+    radial-gradient(900px 500px at -10% 110%, rgba(159, 179, 255, 0.04) 0%, transparent 60%),
+    #08090d;
+  color: #f5f6f9;
+  font-family: "Switzer", "Inter", system-ui, sans-serif;
+  font-feature-settings: "ss01", "ss02", "cv11";
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 .font-display {
-  font-family: "Supreme", system-ui, sans-serif;
-  letter-spacing: -0.01em;
+  font-family: "Sentient", "Iowan Old Style", Georgia, serif;
+  letter-spacing: -0.02em;
 }
-.font-mono {
+
+.font-num {
   font-family: "Martian Mono", ui-monospace, monospace;
+  font-feature-settings: "tnum", "lnum";
+}
+
+.hairline {
+  border-color: rgba(255, 255, 255, 0.06);
+}
+
+.card {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 8px;
+}
+
+.card-tight {
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 6px;
+}
+
+table.data {
+  border-collapse: separate;
+  border-spacing: 0;
+  width: 100%;
+  font-size: 13px;
+}
+table.data th {
+  text-align: left;
+  font-family: "Switzer", sans-serif;
+  font-weight: 600;
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #9aa0ad;
+  background: rgba(255, 255, 255, 0.025);
+  padding: 11px 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+table.data td {
+  padding: 11px 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  vertical-align: top;
+  color: #cdd1db;
+}
+table.data tr:last-child td { border-bottom: none; }
+table.data tr.row-emphasis td {
+  background: rgba(95, 215, 168, 0.04);
+  color: #f5f6f9;
+  font-weight: 600;
+}
+
+.kbd {
+  font-family: "Martian Mono", ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 0.03em;
+  padding: 3px 8px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  color: #9aa0ad;
+}
+
+a:focus-visible, button:focus-visible {
+  outline: 1px solid #5fd7a8;
+  outline-offset: 2px;
+  border-radius: 4px;
 }

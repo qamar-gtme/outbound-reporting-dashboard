@@ -1,4 +1,6 @@
 import { fetchTable } from "@/lib/supabase";
+import { Stat } from "@/components/Stat";
+import { SectionHead, SubHead } from "@/components/SectionHead";
 
 export const revalidate = 60;
 
@@ -12,83 +14,99 @@ export default async function SmartleadPage() {
 
   return (
     <div>
-      <div className="flex items-baseline gap-3 mb-2">
-        <h1 className="font-display font-bold text-3xl text-warn">Section B — Smartlead</h1>
-        <span className="font-mono text-[10px] uppercase tracking-wider text-dim bg-panel px-2 py-1 rounded">
-          source: Supabase smartlead_*
-        </span>
-      </div>
-      <p className="text-ink2 max-w-3xl mb-6">
-        Email outbound from Smartlead campaigns synced into Supabase. <span className="text-warn">Pre-launch (zeros)</span> until first sends fire.
-      </p>
-
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3 mb-8">
-        <S n={t.campaigns_active} l="campaigns" />
-        <S n={t.total_sent} l="emails sent" />
-        <S n={t.total_delivered} l="delivered" />
-        <S n={t.total_opens} l="opens" />
-        <S n={t.total_replies} l="replies" />
-        <S n={t.total_positive_replies} l="positive replies" />
-        <S n={t.total_meetings_booked} l="meetings" />
-        <S n={t.total_bounces} l="bounces" />
-        <S n={t.total_unsubscribes} l="unsubs" />
-        <S n={t.total_spam_complaints} l="spam" />
-        <S n={t.domains_active} l="domains" />
-        <S n={t.inboxes_total} l="inboxes" />
-      </div>
-
-      <div className="bg-panel rounded p-8 text-center text-dim italic mb-10">
-        <div className="font-mono font-bold text-warn text-4xl mb-2">0 / 0</div>
-        Pre-launch — no Smartlead sends yet. Daily metrics will flow into <code className="text-warn">smartlead_daily_metrics</code> via cron once campaigns activate.
-      </div>
-
-      <h2 className="font-display font-bold text-xl mt-10 mb-3 pb-2 border-b border-border">Active campaigns</h2>
-      <Tbl head={["Campaign", "ICP", "Vertical", "Persona", "Geo", "Status", "Inboxes"]}
-        rows={
-          campaigns.length
-            ? campaigns.map((c: any) => [c.name, c.icp, c.vertical, c.persona, c.geo, c.status, c.inboxes_count])
-            : [[<i key="e">No Smartlead campaigns synced yet.</i>, "", "", "", "", "", ""]]
-        }
+      <SectionHead
+        eyebrow="Section B"
+        title="Smartlead"
+        description="Email outbound from Smartlead campaigns, synced into Supabase. Pre launch zeros until first sends fire."
+        source="smartlead_*"
+        accent="warn"
       />
 
-      <h2 className="font-display font-bold text-xl mt-10 mb-3 pb-2 border-b border-border">Daily metrics (60d)</h2>
-      <Tbl head={["Date", "Campaign", "Sent", "Delivered", "Opens", "Replies", "Pos. replies", "Mtgs", "Bounces"]}
-        rows={
-          daily.length
-            ? daily.map((d: any) => [d.metric_date, d.smartlead_campaign_id, d.sent, d.delivered, d.opens, d.replies, d.positive_replies, d.meetings_booked, d.bounces])
-            : [[<i key="e">No daily metrics synced yet.</i>, "", "", "", "", "", "", "", ""]]
-        }
-      />
+      <SubHead title="Account totals" hint={t.period_label ?? "current month"} />
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3 mb-2">
+        <Stat n={t.campaigns_active} label="active campaigns" tone="warn" />
+        <Stat n={t.total_sent} label="emails sent" tone="warn" />
+        <Stat n={t.total_delivered} label="delivered" tone="warn" />
+        <Stat n={t.total_opens} label="opens" tone="warn" hint="Apple MPP discounted" />
+        <Stat n={t.total_replies} label="replies" tone="warn" />
+        <Stat n={t.total_positive_replies} label="positive replies" tone="warn" />
+        <Stat n={t.total_meetings_booked} label="meetings" tone="warn" />
+        <Stat n={t.total_bounces} label="bounces" tone="warn" />
+        <Stat n={t.total_unsubscribes} label="unsubs" tone="warn" />
+        <Stat n={t.total_spam_complaints} label="spam complaints" tone="warn" />
+        <Stat n={t.domains_active} label="domains active" tone="warn" />
+        <Stat n={t.inboxes_total} label="inboxes" tone="warn" />
+      </div>
 
-      <h2 className="font-display font-bold text-xl mt-10 mb-3 pb-2 border-b border-border">Sync schema</h2>
-      <Tbl head={["Table", "Purpose", "Refresh"]}
-        rows={[
-          ["smartlead_campaigns", "Campaign meta (ICP, vertical, persona, domains, inboxes)", "On campaign create/update via webhook"],
-          ["smartlead_daily_metrics", "Per-campaign daily rollup (sent/opens/replies/etc.)", "Daily cron 02:00 UTC"],
-          ["smartlead_prospects", "Per-prospect contacted state (email, hubspot_contact_id, has_replied)", "Real-time via webhook"],
-          ["smartlead_account_totals", "Account-wide period rollup for top-line tiles", "Daily cron after smartlead_daily_metrics"],
-        ]}
-      />
-    </div>
-  );
-}
+      <div className="card p-10 text-center my-8">
+        <div className="font-display text-[64px] text-warn font-num leading-none mb-3">0 / 0</div>
+        <div className="text-ink2 max-w-md mx-auto text-[14px]">
+          Pre launch. Daily metrics flow into <span className="kbd">smartlead_daily_metrics</span> via cron once campaigns activate.
+        </div>
+      </div>
 
-function S({ n, l }: { n: any; l: string }) {
-  return (
-    <div className="bg-panel rounded-md px-4 py-3">
-      <div className="font-mono font-bold text-2xl text-warn">{n != null ? Number(n).toLocaleString() : "—"}</div>
-      <div className="text-xs text-dim uppercase tracking-wider mt-1">{l}</div>
-    </div>
-  );
-}
+      <SubHead title="Active campaigns" />
+      <div className="card overflow-hidden mb-2">
+        <table className="data">
+          <thead>
+            <tr><th>Campaign</th><th>ICP</th><th>Vertical</th><th>Persona</th><th>Geo</th><th>Status</th><th className="text-right">Inboxes</th></tr>
+          </thead>
+          <tbody>
+            {campaigns.length ? campaigns.map((c: any, i: number) => (
+              <tr key={i}>
+                <td className="font-medium text-ink">{c.name}</td>
+                <td>{c.icp || "·"}</td>
+                <td>{c.vertical || "·"}</td>
+                <td>{c.persona || "·"}</td>
+                <td>{c.geo || "·"}</td>
+                <td><span className="kbd">{c.status || "·"}</span></td>
+                <td className="text-right font-num">{c.inboxes_count ?? "·"}</td>
+              </tr>
+            )) : (
+              <tr><td colSpan={7} className="text-dim italic text-center py-6">No campaigns synced.</td></tr>
+            )}
+          </tbody>
+        </table>
+      </div>
 
-function Tbl({ head, rows }: { head: string[]; rows: any[][] }) {
-  return (
-    <div className="overflow-x-auto mb-6">
-      <table className="w-full text-sm">
-        <thead><tr>{head.map((h) => <th key={h} className="text-left font-display font-bold text-[11px] uppercase tracking-wider text-ink2 bg-panel px-3 py-2 border-b border-border">{h}</th>)}</tr></thead>
-        <tbody>{rows.map((r, i) => <tr key={i} className={i % 2 ? "bg-panel2" : ""}>{r.map((c, j) => <td key={j} className="px-3 py-2 border-b border-border align-top">{c == null || c === "" ? "—" : c}</td>)}</tr>)}</tbody>
-      </table>
+      <SubHead title="Daily metrics" hint="last 60 days" />
+      <div className="card overflow-hidden mb-2">
+        <table className="data">
+          <thead>
+            <tr><th>Date</th><th>Campaign</th><th className="text-right">Sent</th><th className="text-right">Delivered</th><th className="text-right">Opens</th><th className="text-right">Replies</th><th className="text-right">Positive</th><th className="text-right">Mtgs</th><th className="text-right">Bounces</th></tr>
+          </thead>
+          <tbody>
+            {daily.length ? daily.map((d: any, i: number) => (
+              <tr key={i}>
+                <td className="font-num text-muted">{d.metric_date}</td>
+                <td>{d.smartlead_campaign_id}</td>
+                <td className="text-right font-num">{d.sent}</td>
+                <td className="text-right font-num">{d.delivered}</td>
+                <td className="text-right font-num">{d.opens}</td>
+                <td className="text-right font-num">{d.replies}</td>
+                <td className="text-right font-num text-accent">{d.positive_replies}</td>
+                <td className="text-right font-num">{d.meetings_booked}</td>
+                <td className="text-right font-num text-loss">{d.bounces}</td>
+              </tr>
+            )) : (
+              <tr><td colSpan={9} className="text-dim italic text-center py-6">No daily metrics synced.</td></tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      <SubHead title="Sync schema" hint="Smartlead to Supabase" />
+      <div className="card overflow-hidden">
+        <table className="data">
+          <thead><tr><th>Table</th><th>Purpose</th><th>Refresh</th></tr></thead>
+          <tbody>
+            <tr><td className="font-num text-warn">smartlead_campaigns</td><td>Campaign metadata, ICP, vertical, persona, domains</td><td className="text-muted">webhook on create or update</td></tr>
+            <tr><td className="font-num text-warn">smartlead_daily_metrics</td><td>Per campaign daily rollup, sent, opens, replies, bounces</td><td className="text-muted">cron 02:00 UTC</td></tr>
+            <tr><td className="font-num text-warn">smartlead_prospects</td><td>Per prospect contact state, has_replied, has_bounced</td><td className="text-muted">real time webhook</td></tr>
+            <tr><td className="font-num text-warn">smartlead_account_totals</td><td>Account wide period rollup for dashboard tiles</td><td className="text-muted">cron after daily metrics</td></tr>
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
