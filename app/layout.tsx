@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
+import { UserChip } from "@/components/UserChip";
 
 export const metadata: Metadata = {
   title: "open.cx outbound",
@@ -61,7 +62,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 <span className="block w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
                 live
               </span>
-              <span className="kbd">supabase</span>
+              <UserChip />
             </div>
           </div>
         </header>
