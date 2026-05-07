@@ -3,10 +3,9 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 
 const ALLOWED_DOMAIN = "@open.cx";
+const TWO_WEEKS = 60 * 60 * 24 * 14;
 
 type CookieItem = { name: string; value: string; options?: CookieOptions };
-
-const TWO_WEEKS = 60 * 60 * 24 * 14;
 
 function withMaxAge(opts: CookieOptions | undefined): CookieOptions {
   return {
@@ -20,11 +19,6 @@ export async function GET(req: Request) {
   const code = searchParams.get("code");
   const next = searchParams.get("next") ?? "/";
 
-  if (!code) {
-    return NextResponse.redirect(`${origin}/login?error=missing-code`);
-  }
-
-  // Build the response first so we can set auth cookies on it directly.
   const response = NextResponse.redirect(`${origin}${next}`);
   const cookieStore = await cookies();
 
@@ -42,7 +36,7 @@ export async function GET(req: Request) {
             try {
               cookieStore.set(name, value, opts);
             } catch {
-              // server component context guard
+              // server context guard
             }
             response.cookies.set(name, value, opts);
           });
@@ -51,17 +45,42 @@ export async function GET(req: Request) {
     },
   );
 
-  const { error, data } = await supabase.auth.exchangeCodeForSession(code);
-  if (error) {
-    return NextResponse.redirect(
-      `${origin}/login?error=${encodeURIComponent(error.message)}`,
-    );
+  // OAuth + magic link path: exchange code for session
+  if (code) {
+    const { error } = await supabase.auth.exchangeCodeForSession(code);
+    if (error) {
+      return NextResponse.redirect(
+        `${origin}/login?error=${encodeURIComponent(error.message)}`,
+      );
+    }
   }
 
-  const email = data.user?.email?.toLowerCase() ?? "";
-  if (!email.endsWith(ALLOWED_DOMAIN)) {
+  // Read the now-authed user (covers OAuth, magic link, and phone OTP paths)
+  const { data: userData } = await supabase.auth.getUser();
+  const email = (userData.user?.email ?? "").toLowerCase();
+  const phone = userData.user?.phone ?? "";
+
+  if (!userData.user) {
+    return NextResponse.redirect(`${origin}/login?error=no-session`);
+  }
+
+  // Email path: enforce @open.cx
+  if (email && !email.endsWith(ALLOWED_DOMAIN)) {
     await supabase.auth.signOut();
     return NextResponse.redirect(`${origin}/login?error=domain`);
+  }
+
+  // Phone-only path: check allowlist
+  if (!email && phone) {
+    const { data: allowed } = await supabase
+      .from("allowed_phones")
+      .select("phone")
+      .eq("phone", phone)
+      .maybeSingle();
+    if (!allowed) {
+      await supabase.auth.signOut();
+      return NextResponse.redirect(`${origin}/login?error=phone-allowlist`);
+    }
   }
 
   return response;
