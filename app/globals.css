@@ -1,0 +1,20 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url("https://api.fontshare.com/v2/css?f[]=supreme@500,700&f[]=erode@400,500&f[]=martian-mono@400&display=swap");
+
+html,
+body {
+  background: #0b0c10;
+  color: #e6e8ee;
+  font-family: "Erode", Georgia, serif;
+}
+
+.font-display {
+  font-family: "Supreme", system-ui, sans-serif;
+  letter-spacing: -0.01em;
+}
+.font-mono {
+  font-family: "Martian Mono", ui-monospace, monospace;
+}
