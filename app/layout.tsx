@@ -10,6 +10,10 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
+      <head>
+        <link rel="preconnect" href="https://api.fontshare.com" />
+        <link href="https://api.fontshare.com/v2/css?f[]=supreme@500,700&f[]=erode@400,500&f[]=martian-mono@400&display=swap" rel="stylesheet" />
+      </head>
       <body>
         <header className="border-b border-border">
           <div className="max-w-[1400px] mx-auto px-7 py-4 flex items-center gap-6">

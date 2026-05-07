@@ -2,8 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url("https://api.fontshare.com/v2/css?f[]=supreme@500,700&f[]=erode@400,500&f[]=martian-mono@400&display=swap");
-
 html,
 body {
   background: #0b0c10;
