@@ -1,6 +1,8 @@
 import "./globals.css";
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 export const metadata: Metadata = {
   title: "open.cx outbound",
@@ -64,6 +66,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </div>
         </header>
         <main className="max-w-[1440px] mx-auto px-8 py-12">{children}</main>
+        <Analytics />
+        <SpeedInsights />
         <footer className="border-t border-line mt-20">
           <div className="max-w-[1440px] mx-auto px-8 py-6 flex items-center justify-between text-[11px] text-dim font-num">
             <span>open.cx outbound, internal reporting</span>
