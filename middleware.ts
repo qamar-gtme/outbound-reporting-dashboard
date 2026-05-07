@@ -5,7 +5,28 @@ const ALLOWED_DOMAIN = "@open.cx";
 
 type CookieItem = { name: string; value: string; options?: CookieOptions };
 
+const TWO_WEEKS = 60 * 60 * 24 * 14;
+
+function withMaxAge(opts: CookieOptions | undefined): CookieOptions {
+  return {
+    ...(opts || {}),
+    maxAge: opts?.maxAge && opts.maxAge > 0 ? opts.maxAge : TWO_WEEKS,
+  };
+}
+
+function withCookies(target: NextResponse, source: NextResponse) {
+  source.cookies.getAll().forEach((c) => target.cookies.set(c));
+  return target;
+}
+
 export async function middleware(req: NextRequest) {
+  // Fallback: if Supabase Site URL points at root, route ?code= to /auth/callback
+  if (req.nextUrl.pathname === "/" && req.nextUrl.searchParams.has("code")) {
+    const url = req.nextUrl.clone();
+    url.pathname = "/auth/callback";
+    return NextResponse.redirect(url);
+  }
+
   let res = NextResponse.next({ request: req });
 
   const supabase = createServerClient(
@@ -20,7 +41,7 @@ export async function middleware(req: NextRequest) {
           items.forEach(({ name, value }) => req.cookies.set(name, value));
           res = NextResponse.next({ request: req });
           items.forEach(({ name, value, options }) =>
-            res.cookies.set(name, value, options),
+            res.cookies.set(name, value, withMaxAge(options)),
           );
         },
       },
@@ -35,18 +56,25 @@ export async function middleware(req: NextRequest) {
   const isAuthRoute = path.startsWith("/login") || path.startsWith("/auth");
 
   if (!user && !isAuthRoute) {
-    return NextResponse.redirect(new URL("/login", req.url));
+    const url = req.nextUrl.clone();
+    url.pathname = "/login";
+    url.search = "";
+    return withCookies(NextResponse.redirect(url), res);
   }
 
   if (user?.email && !user.email.toLowerCase().endsWith(ALLOWED_DOMAIN)) {
     await supabase.auth.signOut();
-    const url = new URL("/login", req.url);
-    url.searchParams.set("error", "domain");
-    return NextResponse.redirect(url);
+    const url = req.nextUrl.clone();
+    url.pathname = "/login";
+    url.search = "?error=domain";
+    return withCookies(NextResponse.redirect(url), res);
   }
 
   if (user && path === "/login") {
-    return NextResponse.redirect(new URL("/", req.url));
+    const url = req.nextUrl.clone();
+    url.pathname = "/";
+    url.search = "";
+    return withCookies(NextResponse.redirect(url), res);
   }
 
   return res;
