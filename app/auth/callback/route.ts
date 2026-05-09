@@ -3,14 +3,14 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 
 const ALLOWED_DOMAIN = "@open.cx";
-const TWO_WEEKS = 60 * 60 * 24 * 14;
+const ONE_MONTH = 60 * 60 * 24 * 30;
 
 type CookieItem = { name: string; value: string; options?: CookieOptions };
 
 function withMaxAge(opts: CookieOptions | undefined): CookieOptions {
   return {
     ...(opts || {}),
-    maxAge: opts?.maxAge && opts.maxAge > 0 ? opts.maxAge : TWO_WEEKS,
+    maxAge: opts?.maxAge && opts.maxAge > 0 ? opts.maxAge : ONE_MONTH,
   };
 }
 

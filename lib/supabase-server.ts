@@ -3,7 +3,7 @@ import { cookies } from "next/headers";
 
 type CookieItem = { name: string; value: string; options?: CookieOptions };
 
-const TWO_WEEKS = 60 * 60 * 24 * 14;
+const ONE_MONTH = 60 * 60 * 24 * 30;
 
 export async function createClient() {
   const cookieStore = await cookies();
@@ -23,7 +23,7 @@ export async function createClient() {
                 maxAge:
                   options?.maxAge && options.maxAge > 0
                     ? options.maxAge
-                    : TWO_WEEKS,
+                    : ONE_MONTH,
               };
               cookieStore.set(name, value, opts);
             });
