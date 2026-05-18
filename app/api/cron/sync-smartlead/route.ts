@@ -14,11 +14,7 @@ import { runSmartleadIcpSync } from "@/lib/smartlead-icp";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-// ICP sync can pull 10k+ leads and run hundreds of OpenAI batches; allow up to
-// 15 minutes (Vercel Fluid Compute supports long runs on cron). The simple
-// campaign-only sync used to complete in <60s; we bump the ceiling so the
-// chained ICP pass has room.
-export const maxDuration = 900;
+export const maxDuration = 60;
 
 function isAuthorized(req: NextRequest): boolean {
   const secret = process.env.CRON_SECRET;
