@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "sync:smartlead": "tsx scripts/sync-smartlead.ts"
+    "sync:smartlead": "tsx scripts/sync-smartlead.ts",
+    "sync:smartlead-icp": "tsx scripts/sync-smartlead-icp.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.5.2",

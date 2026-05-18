@@ -10,10 +10,15 @@
 
 import { NextResponse, type NextRequest } from "next/server";
 import { runSmartleadSync } from "@/lib/smartlead-sync";
+import { runSmartleadIcpSync } from "@/lib/smartlead-icp";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-export const maxDuration = 60;
+// ICP sync can pull 10k+ leads and run hundreds of OpenAI batches; allow up to
+// 15 minutes (Vercel Fluid Compute supports long runs on cron). The simple
+// campaign-only sync used to complete in <60s; we bump the ceiling so the
+// chained ICP pass has room.
+export const maxDuration = 900;
 
 function isAuthorized(req: NextRequest): boolean {
   const secret = process.env.CRON_SECRET;
@@ -57,8 +62,28 @@ export async function GET(req: NextRequest) {
     }
 
     console.log(
-      `[cron/sync-smartlead] ok — ${result.campaigns_upserted}/${result.campaigns_fetched} in ${result.duration_ms}ms`,
+      `[cron/sync-smartlead] campaign sync ok — ${result.campaigns_upserted}/${result.campaigns_fetched} in ${result.duration_ms}ms`,
     );
+
+    // Chain the ICP/TAM coverage sync. Failures here are non-fatal — the
+    // campaign sync already succeeded — but we surface them in the response.
+    let icpResult: Awaited<ReturnType<typeof runSmartleadIcpSync>> | null = null;
+    try {
+      console.log("[cron/sync-smartlead] starting ICP coverage sync");
+      icpResult = await runSmartleadIcpSync({
+        log: (m) => console.log(`[cron/sync-smartlead-icp] ${m}`),
+      });
+      if (icpResult.errors) {
+        console.error(`[cron/sync-smartlead-icp] non-fatal: ${icpResult.errors}`);
+      } else {
+        console.log(
+          `[cron/sync-smartlead-icp] ok — leads=${icpResult.leads_upserted} classified=${icpResult.leads_classified} coverage_rows=${icpResult.coverage_rows_written} cost=$${icpResult.classification_cost_usd_estimate}`,
+        );
+      }
+    } catch (e: any) {
+      const m = e?.message ?? String(e);
+      console.error(`[cron/sync-smartlead-icp] threw: ${m}`);
+    }
 
     return NextResponse.json({
       ok: true,
@@ -69,6 +94,17 @@ export async function GET(req: NextRequest) {
       status_breakdown: result.status_breakdown,
       ran_at: result.ran_at,
       duration_ms: result.duration_ms,
+      icp: icpResult
+        ? {
+            leads_fetched: icpResult.leads_fetched,
+            leads_upserted: icpResult.leads_upserted,
+            leads_classified: icpResult.leads_classified,
+            coverage_rows_written: icpResult.coverage_rows_written,
+            classification_cost_usd_estimate:
+              icpResult.classification_cost_usd_estimate,
+            errors: icpResult.errors,
+          }
+        : null,
     });
   } catch (err: any) {
     const msg = err?.message ?? String(err);
