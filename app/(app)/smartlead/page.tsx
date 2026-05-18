@@ -1,194 +1,112 @@
 import { fetchTable } from "@/lib/supabase";
-import { SectionHead } from "@/components/SectionHead";
+import { Stat } from "@/components/Stat";
+import { SectionHead, SubHead } from "@/components/SectionHead";
 
 export const revalidate = 60;
 
-type Campaign = {
-  id: number;
-  name: string;
-  status: string;
-  created_at: string | null;
-  start_date: string | null;
-  end_date: string | null;
-  synced_at: string;
-};
-
-const STATUS_ORDER = ["ACTIVE", "PAUSED", "DRAFTED", "COMPLETED", "ARCHIVED", "STOPPED"];
-
-const statusPill: Record<string, string> = {
-  ACTIVE: "bg-accent/15 text-accent border-accent/30",
-  PAUSED: "bg-warn/15 text-warn border-warn/30",
-  DRAFTED: "bg-muted/20 text-muted border-muted/30",
-  COMPLETED: "bg-info/15 text-info border-info/30",
-  ARCHIVED: "bg-dim/20 text-dim border-dim/30",
-  STOPPED: "bg-loss/15 text-loss border-loss/30",
-};
-
-const ALLOWED_FILTER = new Set(STATUS_ORDER);
-
-export default async function SmartleadPage({
-  searchParams,
-}: {
-  searchParams?: Promise<{ status?: string }>;
-}) {
-  const params = (await searchParams) ?? {};
-  const rawStatus = (params.status ?? "").toUpperCase();
-  const activeFilter = ALLOWED_FILTER.has(rawStatus) ? rawStatus : null;
-
-  const query = activeFilter
-    ? `smartlead_campaigns?status=eq.${activeFilter}&order=created_at.desc.nullslast`
-    : "smartlead_campaigns?order=created_at.desc.nullslast";
-
-  const campaigns = (await fetchTable(query)) as Campaign[];
-
-  // For status counts in the header we always want the full inventory,
-  // not the filtered slice.
-  const all = activeFilter
-    ? ((await fetchTable("smartlead_campaigns?select=status,synced_at")) as Campaign[])
-    : campaigns;
-
-  const counts: Record<string, number> = {};
-  for (const c of all) counts[c.status] = (counts[c.status] ?? 0) + 1;
-  const total = all.length;
-
-  const latestSync = all.reduce<string | null>((acc, c) => {
-    if (!c.synced_at) return acc;
-    if (!acc || c.synced_at > acc) return c.synced_at;
-    return acc;
-  }, null);
+export default async function SmartleadPage() {
+  const [totals, campaigns, daily] = await Promise.all([
+    fetchTable("smartlead_account_totals?order=period_start.desc&limit=1"),
+    fetchTable("smartlead_campaigns?order=inserted_at.desc&limit=50"),
+    fetchTable("smartlead_daily_metrics?order=metric_date.desc&limit=60"),
+  ]);
+  const t: any = totals[0] || {};
 
   return (
     <div>
       <SectionHead
-        eyebrow="Section B · Smartlead"
-        title="Campaign inventory."
-        description="Every Smartlead campaign in the open.cx account — active, paused, drafted, completed, archived. Synced from server.smartlead.ai into Supabase and read live by the dashboard."
-        source="smartlead_campaigns"
+        eyebrow="Section B"
+        title="Smartlead"
+        description="Email outbound from Smartlead campaigns, synced into Supabase. Pre launch zeros until first sends fire."
+        source="smartlead_*"
         accent="warn"
       />
 
-      <div className="mb-6 flex flex-wrap items-center gap-2 text-[12px]">
-        <FilterChip label={`${total.toLocaleString()} total`} href="/smartlead" active={!activeFilter} />
-        {STATUS_ORDER.filter((s) => counts[s]).map((s) => (
-          <FilterChip
-            key={s}
-            label={`${counts[s].toLocaleString()} ${s.toLowerCase()}`}
-            href={`/smartlead?status=${s}`}
-            active={activeFilter === s}
-            tone={s}
-          />
-        ))}
+      <SubHead title="Account totals" hint={t.period_label ?? "current month"} />
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3 mb-2">
+        <Stat n={t.campaigns_active} label="active campaigns" tone="warn" />
+        <Stat n={t.total_sent} label="emails sent" tone="warn" />
+        <Stat n={t.total_delivered} label="delivered" tone="warn" />
+        <Stat n={t.total_opens} label="opens" tone="warn" hint="Apple MPP discounted" />
+        <Stat n={t.total_replies} label="replies" tone="warn" />
+        <Stat n={t.total_positive_replies} label="positive replies" tone="warn" />
+        <Stat n={t.total_meetings_booked} label="meetings" tone="warn" />
+        <Stat n={t.total_bounces} label="bounces" tone="warn" />
+        <Stat n={t.total_unsubscribes} label="unsubs" tone="warn" />
+        <Stat n={t.total_spam_complaints} label="spam complaints" tone="warn" />
+        <Stat n={t.domains_active} label="domains active" tone="warn" />
+        <Stat n={t.inboxes_total} label="inboxes" tone="warn" />
       </div>
 
-      <div className="card overflow-hidden mb-3">
+      <div className="card p-10 text-center my-8">
+        <div className="font-display text-[64px] text-warn font-num leading-none mb-3">0 / 0</div>
+        <div className="text-ink2 max-w-md mx-auto text-[14px]">
+          Pre launch. Daily metrics flow into <span className="kbd">smartlead_daily_metrics</span> via cron once campaigns activate.
+        </div>
+      </div>
+
+      <SubHead title="Active campaigns" />
+      <div className="card overflow-hidden mb-2">
         <table className="data">
           <thead>
-            <tr>
-              <th>Name</th>
-              <th>Status</th>
-              <th>Created</th>
-              <th>Start</th>
-              <th>End</th>
-              <th className="text-right">Campaign ID</th>
-            </tr>
+            <tr><th>Campaign</th><th>ICP</th><th>Vertical</th><th>Persona</th><th>Geo</th><th>Status</th><th className="text-right">Inboxes</th></tr>
           </thead>
           <tbody>
-            {campaigns.length ? (
-              campaigns.map((c) => (
-                <tr key={c.id}>
-                  <td className="font-medium text-ink">{c.name || "·"}</td>
-                  <td>
-                    <span
-                      className={`inline-flex items-center px-2 py-0.5 rounded border text-[10.5px] uppercase tracking-[0.08em] font-medium font-num ${
-                        statusPill[c.status] ?? "bg-muted/15 text-muted border-muted/30"
-                      }`}
-                    >
-                      {c.status}
-                    </span>
-                  </td>
-                  <td className="font-num text-muted text-[12px]">{fmtDate(c.created_at)}</td>
-                  <td className="font-num text-muted text-[12px]">{fmtDate(c.start_date)}</td>
-                  <td className="font-num text-muted text-[12px]">{fmtDate(c.end_date)}</td>
-                  <td className="text-right font-num text-dim text-[11px]">{c.id}</td>
-                </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan={6} className="text-dim italic text-center py-10">
-                  {activeFilter
-                    ? `No campaigns with status ${activeFilter}.`
-                    : "No campaigns synced yet. Run `npm run sync:smartlead` to populate."}
-                </td>
+            {campaigns.length ? campaigns.map((c: any, i: number) => (
+              <tr key={i}>
+                <td className="font-medium text-ink">{c.name}</td>
+                <td>{c.icp || "·"}</td>
+                <td>{c.vertical || "·"}</td>
+                <td>{c.persona || "·"}</td>
+                <td>{c.geo || "·"}</td>
+                <td><span className="kbd">{c.status || "·"}</span></td>
+                <td className="text-right font-num">{c.inboxes_count ?? "·"}</td>
               </tr>
+            )) : (
+              <tr><td colSpan={7} className="text-dim italic text-center py-6">No campaigns synced.</td></tr>
             )}
           </tbody>
         </table>
       </div>
 
-      <div className="text-[11px] text-dim font-num">
-        Last synced: {latestSync ? relativeTime(latestSync) : "never"}
-        {latestSync && <span className="text-dim/70"> · {fmtDateTime(latestSync)}</span>}
+      <SubHead title="Daily metrics" hint="last 60 days" />
+      <div className="card overflow-hidden mb-2">
+        <table className="data">
+          <thead>
+            <tr><th>Date</th><th>Campaign</th><th className="text-right">Sent</th><th className="text-right">Delivered</th><th className="text-right">Opens</th><th className="text-right">Replies</th><th className="text-right">Positive</th><th className="text-right">Mtgs</th><th className="text-right">Bounces</th></tr>
+          </thead>
+          <tbody>
+            {daily.length ? daily.map((d: any, i: number) => (
+              <tr key={i}>
+                <td className="font-num text-muted">{d.metric_date}</td>
+                <td>{d.smartlead_campaign_id}</td>
+                <td className="text-right font-num">{d.sent}</td>
+                <td className="text-right font-num">{d.delivered}</td>
+                <td className="text-right font-num">{d.opens}</td>
+                <td className="text-right font-num">{d.replies}</td>
+                <td className="text-right font-num text-accent">{d.positive_replies}</td>
+                <td className="text-right font-num">{d.meetings_booked}</td>
+                <td className="text-right font-num text-loss">{d.bounces}</td>
+              </tr>
+            )) : (
+              <tr><td colSpan={9} className="text-dim italic text-center py-6">No daily metrics synced.</td></tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      <SubHead title="Sync schema" hint="Smartlead to Supabase" />
+      <div className="card overflow-hidden">
+        <table className="data">
+          <thead><tr><th>Table</th><th>Purpose</th><th>Refresh</th></tr></thead>
+          <tbody>
+            <tr><td className="font-num text-warn">smartlead_campaigns</td><td>Campaign metadata, ICP, vertical, persona, domains</td><td className="text-muted">webhook on create or update</td></tr>
+            <tr><td className="font-num text-warn">smartlead_daily_metrics</td><td>Per campaign daily rollup, sent, opens, replies, bounces</td><td className="text-muted">cron 02:00 UTC</td></tr>
+            <tr><td className="font-num text-warn">smartlead_prospects</td><td>Per prospect contact state, has_replied, has_bounced</td><td className="text-muted">real time webhook</td></tr>
+            <tr><td className="font-num text-warn">smartlead_account_totals</td><td>Account wide period rollup for dashboard tiles</td><td className="text-muted">cron after daily metrics</td></tr>
+          </tbody>
+        </table>
       </div>
     </div>
   );
-}
-
-function FilterChip({
-  label,
-  href,
-  active,
-  tone,
-}: {
-  label: string;
-  href: string;
-  active: boolean;
-  tone?: string;
-}) {
-  const toneCls = tone ? statusPill[tone] ?? "" : "";
-  return (
-    <a
-      href={href}
-      className={`px-2.5 py-1 rounded border font-num text-[11px] uppercase tracking-[0.08em] transition-colors ${
-        active
-          ? toneCls || "bg-ink/10 text-ink border-ink/30"
-          : "bg-transparent text-muted border-line hover:text-ink hover:border-ink/40"
-      }`}
-    >
-      {label}
-    </a>
-  );
-}
-
-function fmtDate(iso: string | null) {
-  if (!iso) return "—";
-  const d = new Date(iso);
-  if (isNaN(d.getTime())) return "—";
-  return d.toLocaleDateString("en-US", { year: "numeric", month: "short", day: "2-digit" });
-}
-
-function fmtDateTime(iso: string | null) {
-  if (!iso) return "—";
-  const d = new Date(iso);
-  if (isNaN(d.getTime())) return "—";
-  return d.toLocaleString("en-US", {
-    year: "numeric",
-    month: "short",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
-
-function relativeTime(iso: string) {
-  const then = new Date(iso).getTime();
-  if (isNaN(then)) return "—";
-  const diffMs = Date.now() - then;
-  const sec = Math.round(diffMs / 1000);
-  if (sec < 60) return `${sec}s ago`;
-  const min = Math.round(sec / 60);
-  if (min < 60) return `${min}m ago`;
-  const hr = Math.round(min / 60);
-  if (hr < 48) return `${hr}h ago`;
-  const day = Math.round(hr / 24);
-  return `${day}d ago`;
 }
