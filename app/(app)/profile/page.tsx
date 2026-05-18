@@ -3,7 +3,9 @@ import { createClient } from "@/lib/supabase-server";
 import { SectionHead } from "@/components/SectionHead";
 import { ProfileForm } from "./ProfileForm";
 
-export const dynamic = "force-dynamic";
+// With Next 16 Cache Components enabled, route segments default to dynamic
+// rendering unless wrapped in `'use cache'`. This page reads cookies via
+// supabase-server, so it stays dynamic without needing an explicit flag.
 
 function fmtDate(s: string | null | undefined): string {
   if (!s) return "—";

@@ -12,8 +12,9 @@ import { NextResponse, type NextRequest } from "next/server";
 import { runSmartleadSync } from "@/lib/smartlead-sync";
 import { runSmartleadIcpSync } from "@/lib/smartlead-icp";
 
-export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
+// Next 16 + Cache Components doesn't allow `runtime`/`dynamic` exports on
+// route segments. Node is the default runtime for API routes and GET
+// handlers are always dynamic, so this is a no-op behavior change.
 export const maxDuration = 60;
 
 function isAuthorized(req: NextRequest): boolean {

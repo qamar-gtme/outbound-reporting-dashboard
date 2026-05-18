@@ -203,6 +203,20 @@ export async function runSmartleadSync(options?: {
     }
   }
 
+  // Invalidate the dashboard's cached pages so the next user request gets
+  // fresh data. Only do this if (a) the sync succeeded, and (b) we're inside
+  // a Next.js request/build context (i.e. the cron route, not the standalone
+  // script). The dynamic import + try/catch keeps `tsx scripts/...` working.
+  if (!errText && upserted > 0) {
+    try {
+      const { updateTag } = await import("next/cache");
+      updateTag("smartlead-campaigns");
+      updateTag("home");
+    } catch {
+      // Not in a Next.js request context — that's fine (CLI script path).
+    }
+  }
+
   return {
     campaigns_fetched: fetched,
     campaigns_upserted: upserted,

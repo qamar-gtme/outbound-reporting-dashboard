@@ -1,8 +1,7 @@
 import Link from "next/link";
+import { cacheLife, cacheTag } from "next/cache";
 import { fetchTable } from "@/lib/supabase";
 import { SectionHead } from "@/components/SectionHead";
-
-export const revalidate = 60;
 
 type Campaign = {
   id: number;
@@ -14,15 +13,13 @@ type Campaign = {
   synced_at: string;
 };
 
-type CoverageRow = {
+type MegaCovRow = {
   campaign_id: number;
   mega_slug: string;
-  sub_slug: string;
-  vertical_slug: string;
   lead_count: number;
   sent_count: number;
   replied_count: number;
-  reply_rate: number | null;
+  reply_rate_pct: number | null;
 };
 
 type CampaignStats = {
@@ -46,6 +43,35 @@ const statusPill: Record<string, string> = {
 
 const ALLOWED_FILTER = new Set(STATUS_ORDER);
 
+// Cached: campaigns (for current filter) + all-campaign status counts + per-mega
+// coverage. The args are statically-typed strings so Next can key the cache on
+// them — different status filters get their own cache entries.
+async function loadCampaignList(activeFilter: string | null) {
+  "use cache";
+  cacheLife({ revalidate: 600, expire: 3600 });
+  cacheTag("smartlead-campaigns", "smartlead-leads", "smartlead-coverage");
+
+  const query = activeFilter
+    ? `smartlead_campaigns?status=eq.${activeFilter}&order=created_at.desc.nullslast&limit=500`
+    : "smartlead_campaigns?order=created_at.desc.nullslast&limit=500";
+
+  const [campaigns, mega, stats, allMeta] = await Promise.all([
+    fetchTable(query) as Promise<Campaign[]>,
+    // Mega-only coverage view (~tens of rows), not the 20k-row matrix.
+    fetchTable(
+      "smartlead_mega_coverage?select=campaign_id,mega_slug,lead_count,sent_count,replied_count,reply_rate_pct&limit=2000",
+    ) as Promise<MegaCovRow[]>,
+    fetchTable("smartlead_campaign_stats?select=*&limit=500") as Promise<CampaignStats[]>,
+    activeFilter
+      ? (fetchTable(
+          "smartlead_campaigns?select=status,synced_at&limit=2000",
+        ) as Promise<Campaign[]>)
+      : (Promise.resolve(null) as Promise<null>),
+  ]);
+
+  return { campaigns, mega, stats, allMeta };
+}
+
 export default async function SmartleadPage({
   searchParams,
 }: {
@@ -55,22 +81,13 @@ export default async function SmartleadPage({
   const rawStatus = (params.status ?? "").toUpperCase();
   const activeFilter = ALLOWED_FILTER.has(rawStatus) ? rawStatus : null;
 
-  const query = activeFilter
-    ? `smartlead_campaigns?status=eq.${activeFilter}&order=created_at.desc.nullslast`
-    : "smartlead_campaigns?order=created_at.desc.nullslast";
+  const { campaigns, mega, stats, allMeta } = await loadCampaignList(activeFilter);
 
-  const [campaigns, coverage, stats] = await Promise.all([
-    fetchTable(query) as Promise<Campaign[]>,
-    fetchTable("smartlead_campaign_icp_coverage?limit=20000") as Promise<CoverageRow[]>,
-    fetchTable("smartlead_campaign_stats?select=*") as Promise<CampaignStats[]>,
-  ]);
   const statsByCampaign = new Map<number, CampaignStats>();
   for (const s of stats ?? []) statsByCampaign.set(s.campaign_id, s);
 
   // For status counts in the header we always want the full inventory.
-  const all = activeFilter
-    ? ((await fetchTable("smartlead_campaigns?select=status,synced_at")) as Campaign[])
-    : campaigns;
+  const all: Pick<Campaign, "status" | "synced_at">[] = (allMeta as any[]) ?? campaigns;
 
   const counts: Record<string, number> = {};
   for (const c of all) counts[c.status] = (counts[c.status] ?? 0) + 1;
@@ -82,9 +99,9 @@ export default async function SmartleadPage({
     return acc;
   }, null);
 
-  // Index coverage by campaign for the inline expansion.
-  const covByCampaign = new Map<number, CoverageRow[]>();
-  for (const r of coverage ?? []) {
+  // Index coverage by campaign (mega-level) for the inline expansion.
+  const covByCampaign = new Map<number, MegaCovRow[]>();
+  for (const r of mega ?? []) {
     if (!covByCampaign.has(r.campaign_id)) covByCampaign.set(r.campaign_id, []);
     covByCampaign.get(r.campaign_id)!.push(r);
   }
@@ -242,7 +259,7 @@ function CampaignRow({
   sentCount: number;
   repliedCount: number;
   replyRate: number | null;
-  coverage: CoverageRow[];
+  coverage: MegaCovRow[];
 }) {
   const hasCoverage = leadCount > 0;
   return (
@@ -294,24 +311,23 @@ function CampaignIcpDetail({
   totalSent,
   totalReplied,
 }: {
-  coverage: CoverageRow[];
+  coverage: MegaCovRow[];
   totalLeads: number;
   totalSent: number;
   totalReplied: number;
 }) {
-  const verticalRows = coverage.filter(
-    (r) => r.vertical_slug !== "" && r.sub_slug !== "",
-  );
-  const topByCount = [...verticalRows]
+  // The mega-coverage view returns one row per (campaign, mega). Top 5 by
+  // lead count and top 3 by reply rate (with >10 sent) come from that.
+  const topByCount = [...coverage]
     .sort((a, b) => b.lead_count - a.lead_count)
     .slice(0, 5);
-  const topByReply = [...verticalRows]
+  const topByReply = [...coverage]
     .filter((r) => (r.sent_count ?? 0) > 10)
-    .sort(
-      (a, b) =>
-        (b.reply_rate ?? 0) - (a.reply_rate ?? 0) ||
-        b.replied_count - a.replied_count,
-    )
+    .sort((a, b) => {
+      const ar = a.reply_rate_pct ?? 0;
+      const br = b.reply_rate_pct ?? 0;
+      return br - ar || b.replied_count - a.replied_count;
+    })
     .slice(0, 3);
 
   const overall = totalSent > 0 ? totalReplied / totalSent : null;
@@ -336,7 +352,7 @@ function CampaignIcpDetail({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         <div>
           <div className="text-[10px] uppercase tracking-[0.12em] text-muted mb-2 font-medium">
-            Top 5 verticals · by lead count
+            Top 5 mega industries · by lead count
           </div>
           {topByCount.length ? (
             <ul className="space-y-1.5">
@@ -344,18 +360,21 @@ function CampaignIcpDetail({
                 const pct = totalLeads > 0 ? (r.lead_count / totalLeads) * 100 : 0;
                 return (
                   <li
-                    key={r.mega_slug + r.sub_slug + r.vertical_slug}
+                    key={r.mega_slug}
                     className="text-[12px]"
                   >
                     <div className="flex items-baseline justify-between mb-0.5">
-                      <span className="text-ink2 truncate pr-3">
-                        <span className="text-dim">{r.mega_slug}/</span>
-                        {r.vertical_slug}
+                      <span className="text-ink2 truncate pr-3 capitalize">
+                        {r.mega_slug.replace(/-/g, " ")}
                       </span>
                       <span className="font-num text-ink shrink-0">
                         {r.lead_count.toLocaleString()}
                         <span className="text-dim"> · </span>
-                        <span className="text-muted">{fmtRate(r.reply_rate)}</span>
+                        <span className="text-muted">
+                          {r.reply_rate_pct != null
+                            ? `${Number(r.reply_rate_pct).toFixed(1)}%`
+                            : "—"}
+                        </span>
                       </span>
                     </div>
                     <div className="h-[2px] rounded-full bg-surface3 overflow-hidden">
@@ -376,21 +395,24 @@ function CampaignIcpDetail({
         </div>
         <div>
           <div className="text-[10px] uppercase tracking-[0.12em] text-muted mb-2 font-medium">
-            Top 3 verticals · by reply rate (sent &gt; 10)
+            Top 3 mega industries · by reply rate (sent &gt; 10)
           </div>
           {topByReply.length ? (
             <ul className="space-y-1">
               {topByReply.map((r) => (
                 <li
-                  key={r.mega_slug + r.sub_slug + r.vertical_slug + "rr"}
+                  key={r.mega_slug + "rr"}
                   className="flex items-baseline justify-between text-[12px]"
                 >
-                  <span className="text-ink2 truncate pr-3">
-                    <span className="text-dim">{r.mega_slug}/</span>
-                    {r.vertical_slug}
+                  <span className="text-ink2 truncate pr-3 capitalize">
+                    {r.mega_slug.replace(/-/g, " ")}
                   </span>
                   <span className="font-num text-ink shrink-0">
-                    <span className="text-accent">{fmtRate(r.reply_rate)}</span>
+                    <span className="text-accent">
+                      {r.reply_rate_pct != null
+                        ? `${Number(r.reply_rate_pct).toFixed(1)}%`
+                        : "—"}
+                    </span>
                     <span className="text-dim"> · </span>
                     <span className="text-muted">
                       {r.replied_count}/{r.sent_count}
@@ -401,7 +423,7 @@ function CampaignIcpDetail({
             </ul>
           ) : (
             <div className="text-dim text-[12px] italic">
-              Not enough volume yet (need &gt;10 sent per vertical).
+              Not enough volume yet (need &gt;10 sent per mega).
             </div>
           )}
         </div>

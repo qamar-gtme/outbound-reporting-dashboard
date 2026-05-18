@@ -19,8 +19,10 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
-export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
+// Next 16 + Cache Components: route segment config `runtime`/`dynamic` is
+// no longer accepted here. Node.js is the default runtime for app-router
+// API routes and POST handlers are always dynamic, so removing these two
+// exports changes nothing about how this endpoint executes.
 
 const ALLOWED_DOMAIN = "@open.cx";
 const COOLDOWN_MS = 5 * 60 * 1000; // 5 min per email

@@ -1,11 +1,19 @@
+import { cacheLife, cacheTag } from "next/cache";
 import { fetchTable } from "@/lib/supabase";
 import { SectionHead, SubHead } from "@/components/SectionHead";
 import { Stat } from "@/components/Stat";
 
-export const revalidate = 60;
+async function loadIntent() {
+  "use cache";
+  cacheLife({ revalidate: 3600, expire: 86400 });
+  cacheTag("intent");
+  return fetchTable(
+    "intent_signals?order=category.asc,precision_score.desc&limit=500",
+  );
+}
 
 export default async function IntentPage() {
-  const signals = await fetchTable("intent_signals?order=category.asc,precision_score.desc");
+  const signals = await loadIntent();
   const byCat: Record<string, any[]> = {};
   signals.forEach((s: any) => (byCat[s.category] ||= []).push(s));
 

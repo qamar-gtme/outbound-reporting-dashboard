@@ -1,18 +1,26 @@
+import { cacheLife, cacheTag } from "next/cache";
 import { fetchTable } from "@/lib/supabase";
 import { Stat } from "@/components/Stat";
 import { SectionHead, SubHead } from "@/components/SectionHead";
 import { MEGA_INDUSTRIES, resolveMega } from "@/lib/taxonomy";
 import { MarketplaceBadge } from "@/components/PersonaCard";
 
-export const revalidate = 60;
+async function loadTam() {
+  "use cache";
+  // TAM is reference data — refresh hourly is plenty.
+  cacheLife({ revalidate: 3600, expire: 86400 });
+  cacheTag("tam");
 
-export default async function TAMPage() {
-  const [inds, subs, verts, byInd] = await Promise.all([
-    fetchTable("tam_industries?order=company_count_us.desc.nullslast"),
+  return Promise.all([
+    fetchTable("tam_industries?order=company_count_us.desc.nullslast&limit=500"),
     fetchTable("tam_subindustries?order=company_count_us.desc.nullslast&limit=60"),
     fetchTable("tam_verticals?order=company_count_us.desc.nullslast&limit=60"),
-    fetchTable("sdr_perf_by_industry?period_id=eq.1"),
+    fetchTable("sdr_perf_by_industry?period_id=eq.1&limit=200"),
   ]);
+}
+
+export default async function TAMPage() {
+  const [inds, subs, verts, byInd] = await loadTam();
 
   const indDials: Record<string, any> = {};
   byInd.forEach((r: any) => (indDials[r.industry] = r));

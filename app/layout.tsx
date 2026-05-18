@@ -13,7 +13,30 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <link rel="preconnect" href="https://api.fontshare.com" />
+        {/* Preconnect to Fontshare hosts so the CSS + font file requests
+            start the TLS handshake in parallel with the HTML download.
+            display=swap is already in the URL so the browser paints with
+            the system fallback immediately instead of blocking. */}
+        <link
+          rel="preconnect"
+          href="https://api.fontshare.com"
+          crossOrigin="anonymous"
+        />
+        <link
+          rel="preconnect"
+          href="https://cdn.fontshare.com"
+          crossOrigin="anonymous"
+        />
+        <link
+          rel="preconnect"
+          href="https://fonts.googleapis.com"
+          crossOrigin="anonymous"
+        />
+        <link
+          rel="preconnect"
+          href="https://fonts.gstatic.com"
+          crossOrigin="anonymous"
+        />
         <link
           href="https://api.fontshare.com/v2/css?f[]=switzer@500,600,700,400&f[]=sentient@400,500,700,400i,500i,700i&f[]=erode@400,500&display=swap"
           rel="stylesheet"

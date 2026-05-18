@@ -1,14 +1,21 @@
+import { cacheLife, cacheTag } from "next/cache";
 import { fetchTable } from "@/lib/supabase";
 import { SectionHead, SubHead } from "@/components/SectionHead";
 import { Stat } from "@/components/Stat";
 
-export const revalidate = 60;
+async function loadCopy() {
+  "use cache";
+  cacheLife({ revalidate: 3600, expire: 86400 });
+  cacheTag("copy");
 
-export default async function CopyPage() {
-  const [angles, perf] = await Promise.all([
-    fetchTable("copy_angles?order=icp.asc"),
+  return Promise.all([
+    fetchTable("copy_angles?order=icp.asc&limit=500"),
     fetchTable("copy_performance?limit=500"),
   ]);
+}
+
+export default async function CopyPage() {
+  const [angles, perf] = await loadCopy();
   const byICP: Record<string, any[]> = {};
   angles.forEach((a: any) => (byICP[a.icp] ||= []).push(a));
   const perfMap: Record<number, any> = {};

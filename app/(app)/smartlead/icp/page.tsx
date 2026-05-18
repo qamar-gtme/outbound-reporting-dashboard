@@ -1,9 +1,8 @@
 import Link from "next/link";
+import { cacheLife, cacheTag } from "next/cache";
 import { fetchTable } from "@/lib/supabase";
 import { SectionHead } from "@/components/SectionHead";
 import { Stat } from "@/components/Stat";
-
-export const revalidate = 60;
 
 type Campaign = {
   id: number;
@@ -32,6 +31,38 @@ const statusPill: Record<string, string> = {
   COMPLETED: "bg-info/15 text-info border-info/30",
 };
 
+// Cached: campaigns list + coverage scoped to the requested depth.
+// At `mega` depth we hit a tiny (<200 row) view; at `sub`/`vertical` we still
+// pull the full coverage table but with a generous server-side filter.
+async function loadIcp(depth: Depth) {
+  "use cache";
+  cacheLife({ revalidate: 600, expire: 3600 });
+  cacheTag("smartlead-campaigns", "smartlead-coverage", "smartlead-leads");
+
+  // Mega depth: use the pre-aggregated view (fast). Sub/vertical: only pull
+  // the rows we actually render — PostgREST filters keep payload bounded.
+  const coverageQuery =
+    depth === "mega"
+      ? "smartlead_campaign_icp_coverage?select=*&sub_slug=eq.&vertical_slug=eq.&limit=2000"
+      : depth === "sub"
+        ? "smartlead_campaign_icp_coverage?select=*&sub_slug=not.eq.&vertical_slug=eq.&limit=5000"
+        : "smartlead_campaign_icp_coverage?select=*&sub_slug=not.eq.&vertical_slug=not.eq.&limit=20000";
+
+  // Mega rollup totals always come from the mega-only view so the header
+  // stats don't change when the user toggles depth.
+  const [campaigns, coverage, megaRollup] = await Promise.all([
+    fetchTable(
+      "smartlead_campaigns?select=id,name,status&order=id.asc&limit=500",
+    ) as Promise<Campaign[]>,
+    fetchTable(coverageQuery) as Promise<CoverageRow[]>,
+    fetchTable(
+      "smartlead_campaign_icp_coverage?select=campaign_id,mega_slug,lead_count,sent_count,replied_count&sub_slug=eq.&vertical_slug=eq.&limit=2000",
+    ) as Promise<CoverageRow[]>,
+  ]);
+
+  return { campaigns, coverage, megaRollup };
+}
+
 export default async function SmartleadIcpPage({
   searchParams,
 }: {
@@ -43,10 +74,7 @@ export default async function SmartleadIcpPage({
     : "mega";
   const campaignFilter = params.campaign ? Number(params.campaign) : null;
 
-  const [campaigns, coverage] = await Promise.all([
-    fetchTable("smartlead_campaigns?select=id,name,status&order=id.asc") as Promise<Campaign[]>,
-    fetchTable("smartlead_campaign_icp_coverage?limit=20000") as Promise<CoverageRow[]>,
-  ]);
+  const { campaigns, coverage, megaRollup } = await loadIcp(depth);
 
   // Filter coverage by selected depth.
   const isDepthRow = (r: CoverageRow): boolean => {
@@ -56,16 +84,12 @@ export default async function SmartleadIcpPage({
   };
   const filtered = (coverage ?? []).filter(isDepthRow);
 
-  // Aggregate header stats from mega-rollup rows (one per campaign per mega)
-  // to avoid double-counting from vertical/sub rows.
-  const megaRows = (coverage ?? []).filter(
-    (r) => r.sub_slug === "" && r.vertical_slug === "",
-  );
-  const totalLeads = megaRows.reduce((s, r) => s + (r.lead_count || 0), 0);
-  const totalSent = megaRows.reduce((s, r) => s + (r.sent_count || 0), 0);
-  const totalReplied = megaRows.reduce((s, r) => s + (r.replied_count || 0), 0);
+  // Header totals come from the mega rollup so depth toggling is consistent.
+  const totalLeads = megaRollup.reduce((s, r) => s + (r.lead_count || 0), 0);
+  const totalSent = megaRollup.reduce((s, r) => s + (r.sent_count || 0), 0);
+  const totalReplied = megaRollup.reduce((s, r) => s + (r.replied_count || 0), 0);
   const overallRate = totalSent > 0 ? totalReplied / totalSent : null;
-  const totalCampaignsCovered = new Set(megaRows.map((r) => r.campaign_id)).size;
+  const totalCampaignsCovered = new Set(megaRollup.map((r) => r.campaign_id)).size;
 
   // Build the matrix:
   //   rows  = distinct depth keys
@@ -74,7 +98,6 @@ export default async function SmartleadIcpPage({
     ? campaigns.filter((c) => c.id === campaignFilter)
     : campaigns;
 
-  type Key = { mega: string; sub: string; vertical: string };
   const keyOf = (r: CoverageRow): string =>
     `${r.mega_slug}::${r.sub_slug}::${r.vertical_slug}`;
   const labelOf = (k: string): string => {

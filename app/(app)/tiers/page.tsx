@@ -1,14 +1,22 @@
+import { cacheLife, cacheTag } from "next/cache";
 import { fetchTable } from "@/lib/supabase";
 import { SectionHead } from "@/components/SectionHead";
 import { TiersView } from "./TiersView";
 
-export const revalidate = 60;
+async function loadTiers() {
+  "use cache";
+  // Reference data — refresh hourly.
+  cacheLife({ revalidate: 3600, expire: 86400 });
+  cacheTag("tiers");
+  // segmentation_tiers has ~366 rows — give a safety cap.
+  return fetchTable("segmentation_tiers?order=tier.asc&limit=2000");
+}
 
 export default async function TiersPage() {
   // segmentation_tiers carries the v3 shape (personas jsonb, is_marketplace,
   // business_model, mega_industry). Older rows that pre-date the migration
   // are tolerated by TiersView (graceful fallback to v2 fields).
-  const tiers = await fetchTable("segmentation_tiers?order=tier.asc");
+  const tiers = await loadTiers();
 
   return (
     <div>

@@ -755,6 +755,20 @@ export async function runSmartleadIcpSync(opts?: {
     log(`Sync failed: ${errText}`);
   }
 
+  // Invalidate cached pages that depend on lead/coverage data. Wrapped in a
+  // try/catch + dynamic import so the standalone tsx script path (no
+  // Next.js context) still works.
+  if (!errText && (leadsUpserted > 0 || coverageRows > 0)) {
+    try {
+      const { updateTag } = await import("next/cache");
+      updateTag("smartlead-leads");
+      updateTag("smartlead-coverage");
+      updateTag("home");
+    } catch {
+      // Standalone script context — nothing to invalidate.
+    }
+  }
+
   const costUsd = tokensIn * PRICE_IN + tokensOut * PRICE_OUT;
 
   return {

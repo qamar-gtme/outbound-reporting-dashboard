@@ -1,9 +1,8 @@
 import Link from "next/link";
+import { cacheLife, cacheTag } from "next/cache";
 import { fetchTable } from "@/lib/supabase";
 import { Stat } from "@/components/Stat";
 import { SectionHead, SubHead } from "@/components/SectionHead";
-
-export const revalidate = 60;
 
 const US_NAMES = ["Mahmoud", "Kaze", "Khaled", "Ghaith", "Waseem", "Ikremah"];
 
@@ -14,31 +13,60 @@ type Campaign = {
   created_at: string | null;
 };
 
-type CoverageRow = {
+type MegaCovRow = {
   campaign_id: number;
   mega_slug: string;
-  sub_slug: string;
-  vertical_slug: string;
   lead_count: number;
   sent_count: number;
   replied_count: number;
 };
 
+// All Supabase reads live inside this cached function so that the rendered
+// home page comes out of the in-memory cache between syncs. The sync libs
+// call `updateTag('smartlead-campaigns'|'smartlead-leads')` so a fresh sync
+// invalidates this page on the next request.
+async function loadHomeData() {
+  "use cache";
+  cacheLife({ revalidate: 600, expire: 3600 });
+  cacheTag("home", "sdr", "smartlead-campaigns", "smartlead-leads", "smartlead-coverage");
+
+  const [
+    sdrAll,
+    smartleadTotals,
+    periodStats,
+    owners,
+    period,
+    campaigns,
+    mega,
+  ] = await Promise.all([
+    fetchTable("sdr_perf_by_sdr?period_id=eq.1&limit=200"),
+    fetchTable("smartlead_account_totals?order=period_start.desc&limit=1"),
+    fetchTable("hs_period_stats?period_id=eq.1&limit=1"),
+    fetchTable("hs_meetings_by_owner?period_id=eq.1&limit=200"),
+    fetchTable("sdr_perf_period?id=eq.1&limit=1"),
+    fetchTable(
+      "smartlead_campaigns?select=id,name,status,created_at&order=created_at.desc.nullslast&limit=200",
+    ) as Promise<Campaign[]>,
+    // Use the new pre-aggregated view instead of pulling the full 20k-row
+    // coverage table.
+    fetchTable(
+      "smartlead_mega_coverage?select=campaign_id,mega_slug,lead_count,sent_count,replied_count&limit=2000",
+    ) as Promise<MegaCovRow[]>,
+  ]);
+
+  return { sdrAll, smartleadTotals, periodStats, owners, period, campaigns, mega };
+}
+
 export default async function HomePage() {
-  const [sdrAll, smartleadTotals, periodStats, owners, period, campaigns, coverage] =
-    await Promise.all([
-      fetchTable("sdr_perf_by_sdr?period_id=eq.1"),
-      fetchTable("smartlead_account_totals?order=period_start.desc&limit=1"),
-      fetchTable("hs_period_stats?period_id=eq.1"),
-      fetchTable("hs_meetings_by_owner?period_id=eq.1"),
-      fetchTable("sdr_perf_period?id=eq.1"),
-      fetchTable(
-        "smartlead_campaigns?select=id,name,status,created_at&order=created_at.desc.nullslast&limit=200",
-      ) as Promise<Campaign[]>,
-      fetchTable(
-        "smartlead_campaign_icp_coverage?limit=20000",
-      ) as Promise<CoverageRow[]>,
-    ]);
+  const {
+    sdrAll,
+    smartleadTotals,
+    periodStats,
+    owners,
+    period,
+    campaigns,
+    mega,
+  } = await loadHomeData();
 
   const ps: any = periodStats[0] || {};
   const sl: any = smartleadTotals[0] || {};
@@ -69,12 +97,10 @@ export default async function HomePage() {
   for (const c of campaigns) statusCounts[c.status] = (statusCounts[c.status] ?? 0) + 1;
   const activeCount = statusCounts["ACTIVE"] ?? 0;
 
-  // Top mega industries by Smartlead lead volume (using rollup rows)
-  const megaRows = coverage.filter(
-    (r) => r.sub_slug === "" && r.vertical_slug === "",
-  );
+  // Top mega industries by Smartlead lead volume — already aggregated by the
+  // smartlead_mega_coverage view (one row per campaign × mega).
   const megaTotals = new Map<string, { lead: number; sent: number; rep: number }>();
-  for (const r of megaRows) {
+  for (const r of mega) {
     const cur = megaTotals.get(r.mega_slug) ?? { lead: 0, sent: 0, rep: 0 };
     cur.lead += r.lead_count || 0;
     cur.sent += r.sent_count || 0;

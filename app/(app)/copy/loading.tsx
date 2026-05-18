@@ -1,0 +1,43 @@
+/**
+ * Copy page skeleton — 4 KPIs + multiple ICP sections, each with a table.
+ */
+export default function Loading() {
+  return (
+    <div>
+      <div className="mb-6">
+        <div className="h-3 w-16 rounded bg-surface2 animate-pulse mb-3" />
+        <div className="h-6 w-64 rounded bg-surface2 animate-pulse mb-3" />
+        <div className="h-3 w-[28rem] max-w-full rounded bg-surface2/70 animate-pulse" />
+      </div>
+
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div key={i} className="card-stat px-4 py-3">
+            <div className="h-2.5 w-16 rounded bg-surface2 animate-pulse mb-3" />
+            <div className="h-6 w-16 rounded bg-surface2 animate-pulse" />
+          </div>
+        ))}
+      </div>
+
+      {Array.from({ length: 3 }).map((_, s) => (
+        <section key={s} className="mb-8">
+          <div className="flex items-baseline justify-between gap-3 mt-8 mb-3 pb-2 border-b border-border">
+            <div className="h-3 w-32 rounded bg-surface2 animate-pulse" />
+            <div className="h-2.5 w-20 rounded bg-surface2/60 animate-pulse" />
+          </div>
+          <div className="card overflow-hidden">
+            <div className="h-9 bg-surface2/40 border-b border-border" />
+            <div className="divide-y divide-border">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="px-3 py-2.5 flex gap-6">
+                  <div className="h-3 w-32 rounded bg-surface2/70 animate-pulse" />
+                  <div className="h-3 flex-1 rounded bg-surface2/50 animate-pulse" />
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      ))}
+    </div>
+  );
+}

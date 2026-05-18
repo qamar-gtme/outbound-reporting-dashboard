@@ -1,22 +1,31 @@
+import { cacheLife, cacheTag } from "next/cache";
 import { fetchTable } from "@/lib/supabase";
 import { Stat } from "@/components/Stat";
 import { SectionHead, SubHead } from "@/components/SectionHead";
 
-export const revalidate = 60;
 const US_NAMES = ["Mahmoud", "Kaze", "Khaled", "Ghaith", "Waseem", "Ikremah"];
 
-export default async function SDRPage() {
-  const [period, allSdr, roster, owners, pool, periodStats, byInd, byPersona, recs] = await Promise.all([
-    fetchTable("sdr_perf_period?id=eq.1"),
-    fetchTable("sdr_perf_by_sdr?period_id=eq.1&order=total_dials.desc"),
-    fetchTable("sdr_roster?status=eq.active&region=eq.US"),
-    fetchTable("hs_meetings_by_owner?period_id=eq.1&order=meetings_count.desc"),
-    fetchTable("hs_sdr_contact_pool?period_id=eq.1&order=contacts_owned.desc"),
-    fetchTable("hs_period_stats?period_id=eq.1"),
-    fetchTable("sdr_perf_by_industry?period_id=eq.1&order=conversations.desc.nullslast"),
-    fetchTable("sdr_perf_by_persona?period_id=eq.1&order=conversations.desc.nullslast"),
-    fetchTable("sdr_perf_recommendation?period_id=eq.1"),
+async function loadSdrData() {
+  "use cache";
+  cacheLife({ revalidate: 600, expire: 3600 });
+  cacheTag("sdr");
+
+  return Promise.all([
+    fetchTable("sdr_perf_period?id=eq.1&limit=1"),
+    fetchTable("sdr_perf_by_sdr?period_id=eq.1&order=total_dials.desc&limit=200"),
+    fetchTable("sdr_roster?status=eq.active&region=eq.US&limit=100"),
+    fetchTable("hs_meetings_by_owner?period_id=eq.1&order=meetings_count.desc&limit=200"),
+    fetchTable("hs_sdr_contact_pool?period_id=eq.1&order=contacts_owned.desc&limit=200"),
+    fetchTable("hs_period_stats?period_id=eq.1&limit=1"),
+    fetchTable("sdr_perf_by_industry?period_id=eq.1&order=conversations.desc.nullslast&limit=200"),
+    fetchTable("sdr_perf_by_persona?period_id=eq.1&order=conversations.desc.nullslast&limit=200"),
+    fetchTable("sdr_perf_recommendation?period_id=eq.1&limit=200"),
   ]);
+}
+
+export default async function SDRPage() {
+  const [period, allSdr, roster, owners, pool, periodStats, byInd, byPersona, recs] =
+    await loadSdrData();
 
   const p: any = period[0] || {};
   const ps: any = periodStats[0] || {};
