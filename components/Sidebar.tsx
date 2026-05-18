@@ -86,12 +86,11 @@ export function Sidebar({ email }: { email: string | null }) {
     >
       {/* Brand */}
       <div className="flex h-14 items-center gap-2.5 border-b border-border px-4">
-        <Link href="/" className="flex items-center gap-2.5 min-w-0">
-          <BrandMark />
-          {!collapsed && (
-            <span className="truncate font-display italic text-[17px] leading-none text-foreground">
-              open.cx
-            </span>
+        <Link href="/" className="flex items-center gap-2 min-w-0">
+          {collapsed ? (
+            <BrandMark />
+          ) : (
+            <LogoFull className="h-6 w-auto text-foreground" />
           )}
         </Link>
         {!collapsed && (
@@ -205,17 +204,10 @@ function isActive(pathname: string, href: string): boolean {
   return pathname === href || pathname.startsWith(href + "/");
 }
 
+import { LogoFull, LogoMark } from "@/components/Logo";
+
 function BrandMark() {
-  return (
-    <span className="grid h-7 w-7 shrink-0 place-items-center rounded-md bg-accent text-accent-fg">
-      <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden>
-        <path
-          fill="currentColor"
-          d="M10 3h4v7h7v4h-7v7h-4v-7H3v-4h7z"
-        />
-      </svg>
-    </span>
-  );
+  return <LogoMark className="h-7 w-7 shrink-0 text-foreground" />;
 }
 
 /* ----- Icons (1.5px stroke, 16px) ------------------------------------- */
