@@ -18,6 +18,7 @@ const NAV: NavGroup[] = [
       { href: "/sdr", label: "SDR", icon: PhoneIcon },
       { href: "/smartlead", label: "Smartlead", icon: MailIcon },
       { href: "/smartlead/icp", label: "ICP Coverage", icon: TargetIcon },
+      { href: "/segments", label: "Segments", icon: BucketIcon },
     ],
   },
   {
@@ -265,6 +266,15 @@ function GlobeIcon(p: React.SVGProps<SVGSVGElement>) {
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" {...p}>
       <circle cx="12" cy="12" r="9" />
       <path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18" />
+    </svg>
+  );
+}
+function BucketIcon(p: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" {...p}>
+      <rect x="3" y="4" width="18" height="4" rx="1" />
+      <rect x="3" y="10" width="18" height="4" rx="1" />
+      <rect x="3" y="16" width="18" height="4" rx="1" />
     </svg>
   );
 }
