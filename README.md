@@ -47,51 +47,6 @@ vercel --prod      # deploy to production
 
 Pages use `export const revalidate = 60`. For real-time, add Supabase Realtime subscriptions.
 
-## Smartlead sync
+## Smartlead sync (pending)
 
-Pulls all open.cx Smartlead campaigns into the `smartlead_campaigns` table and
-writes a per-run summary to `smartlead_sync_runs`. Idempotent — re-running is
-safe.
-
-Shared logic lives in `lib/smartlead-sync.ts` and is invoked by both the CLI
-script and the Vercel Cron route.
-
-### Run manually (local)
-
-```bash
-npm run sync:smartlead
-```
-
-### Vercel Cron (production)
-
-| Item | Value |
-|---|---|
-| Route | `GET /api/cron/sync-smartlead` |
-| Schedule | `0 9 * * *` (daily 09:00 UTC = 04:00 ET = 14:00 PKT) |
-| Auth | `Authorization: Bearer $CRON_SECRET` (Vercel injects automatically) |
-
-Required env vars on Vercel (Project → Settings → Environment Variables):
-
-- `CRON_SECRET` — random token, e.g. `openssl rand -hex 32`
-- `SMARTLEAD_API_KEY_OPENCX` — open.cx Smartlead API key
-- `SUPABASE_SERVICE_ROLE_KEY` — Supabase service-role key (server only)
-- `NEXT_PUBLIC_SUPABASE_URL` — already set for the app
-
-The cron registers automatically on the next deploy after `vercel.json` lands.
-`CRON_SECRET` must be set in Vercel project env for production to authorize
-the scheduled request.
-
-### Test locally
-
-```bash
-# Header auth (mirrors Vercel Cron)
-curl -H "Authorization: Bearer $CRON_SECRET" \
-  http://localhost:3000/api/cron/sync-smartlead
-
-# Or via querystring fallback
-curl "http://localhost:3000/api/cron/sync-smartlead?key=$CRON_SECRET"
-```
-
-The route returns
-`{ok, campaigns_fetched, campaigns_upserted, status_breakdown, ran_at, …}`
-on success, or `{ok: false, error}` with HTTP 500 on failure.
+`smartlead_*` tables ready in Supabase. Sync job to be built using open.cx Smartlead API key.
