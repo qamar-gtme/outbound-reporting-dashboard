@@ -79,16 +79,10 @@ export function ProfileForm({
       setPwError("Passwords don't match.");
       return;
     }
-    if (hasPasswordProvider && !currentPw) {
-      setPwStatus("error");
-      setPwError("Enter your current password.");
-      return;
-    }
-
     setPwStatus("saving");
     const { error } = await setOrChangePassword({
       email,
-      currentPassword: hasPasswordProvider ? currentPw : undefined,
+      currentPassword: currentPw || undefined,
       newPassword: newPw,
     });
     if (error) {
@@ -110,7 +104,7 @@ export function ProfileForm({
 
   const pwHeadline = hasPasswordProvider ? "Change password" : "Set a password";
   const pwDescription = hasPasswordProvider
-    ? "Replace your existing password."
+    ? "Replace your password. Current password is optional — leave blank if you don't remember it (your active session is trusted)."
     : "You signed in via magic link. Pick a password so you can also sign in directly.";
 
   return (
@@ -161,7 +155,7 @@ export function ProfileForm({
         {hasPasswordProvider && (
           <label className="block">
             <span className="text-[10.5px] uppercase tracking-[0.14em] text-muted font-medium block mb-2">
-              Current password
+              Current password <span className="text-dim normal-case tracking-normal font-normal">(optional)</span>
             </span>
             <input
               type={showPw ? "text" : "password"}
