@@ -45,7 +45,7 @@ export async function GET(req: Request) {
     },
   );
 
-  // OAuth + magic link path: exchange code for session
+  // Magic link / signup confirmation / password reset: exchange code for session
   if (code) {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (error) {
@@ -55,32 +55,17 @@ export async function GET(req: Request) {
     }
   }
 
-  // Read the now-authed user (covers OAuth, magic link, and phone OTP paths)
   const { data: userData } = await supabase.auth.getUser();
   const email = (userData.user?.email ?? "").toLowerCase();
-  const phone = userData.user?.phone ?? "";
 
   if (!userData.user) {
     return NextResponse.redirect(`${origin}/login?error=no-session`);
   }
 
-  // Email path: enforce @open.cx
-  if (email && !email.endsWith(ALLOWED_DOMAIN)) {
+  // Enforce @open.cx allowlist
+  if (!email || !email.endsWith(ALLOWED_DOMAIN)) {
     await supabase.auth.signOut();
     return NextResponse.redirect(`${origin}/login?error=domain`);
-  }
-
-  // Phone-only path: check allowlist
-  if (!email && phone) {
-    const { data: allowed } = await supabase
-      .from("allowed_phones")
-      .select("phone")
-      .eq("phone", phone)
-      .maybeSingle();
-    if (!allowed) {
-      await supabase.auth.signOut();
-      return NextResponse.redirect(`${origin}/login?error=phone-allowlist`);
-    }
   }
 
   return response;
