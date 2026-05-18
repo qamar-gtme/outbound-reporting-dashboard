@@ -68,19 +68,19 @@ export default async function HomePage() {
       </div>
 
       <SubHead title="Sections" />
-      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
         {sections.map((s) => (
           <Link
             key={s.href}
             href={s.href}
-            className="card p-6 hover:bg-surface2 hover:border-line2 transition group"
+            className="card p-4 hover:border-border-strong hover:bg-surface2 transition group"
           >
-            <div className="flex items-center gap-2 mb-3">
+            <div className="flex items-center gap-2 mb-2">
               <span className={`block w-1.5 h-1.5 rounded-full ${dotMap[s.tone]}`} />
-              <span className="text-[11px] uppercase tracking-[0.14em] text-muted font-medium">{s.tone}</span>
+              <span className="text-[10px] uppercase tracking-[0.12em] text-muted font-medium">{s.tone}</span>
             </div>
-            <div className="font-display text-[22px] tracking-tight text-ink mb-2 group-hover:text-accent transition">{s.title}</div>
-            <p className="text-[13px] text-ink2 leading-relaxed">{s.desc}</p>
+            <div className="text-[15px] font-semibold tracking-tight text-foreground mb-1 group-hover:text-accent transition">{s.title}</div>
+            <p className="text-[12.5px] text-ink2 leading-relaxed">{s.desc}</p>
           </Link>
         ))}
       </div>

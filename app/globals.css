@@ -2,19 +2,86 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ----------------------------------------------------------------------------
+   open.cx outbound — SaaS app shell tokens
+   Single brand accent: open.cx green (~#16a34a / favicon). Everything else
+   is neutral. Light and dark are driven by the same variable names so any
+   component using `bg-card`, `text-foreground`, `border-border`, etc. just
+   works in both modes.
+---------------------------------------------------------------------------- */
+
+:root {
+  /* surfaces */
+  --bg: 0 0% 99%;
+  --surface: 0 0% 100%;
+  --surface-2: 220 14% 96%;
+  --surface-3: 220 13% 92%;
+  --card: 0 0% 100%;
+  --popover: 0 0% 100%;
+
+  /* lines */
+  --border: 220 13% 89%;
+  --border-strong: 220 12% 82%;
+  --ring: 142 71% 35%;
+
+  /* text */
+  --fg: 220 18% 11%;
+  --fg-2: 220 12% 28%;
+  --muted: 220 9% 46%;
+  --dim: 220 8% 60%;
+
+  /* brand + status */
+  --accent: 142 71% 35%;       /* open.cx green */
+  --accent-fg: 0 0% 100%;
+  --warn: 38 92% 50%;
+  --info: 217 91% 60%;
+  --danger: 0 72% 51%;
+  --success: 142 71% 35%;
+
+  /* layout */
+  --sidebar-w: 240px;
+}
+
+.dark {
+  --bg: 220 14% 6%;
+  --surface: 220 14% 8%;
+  --surface-2: 220 13% 11%;
+  --surface-3: 220 12% 14%;
+  --card: 220 14% 8%;
+  --popover: 220 14% 9%;
+
+  --border: 220 10% 18%;
+  --border-strong: 220 10% 24%;
+  --ring: 142 60% 50%;
+
+  --fg: 220 14% 96%;
+  --fg-2: 220 10% 80%;
+  --muted: 220 8% 58%;
+  --dim: 220 8% 42%;
+
+  --accent: 142 60% 48%;
+  --accent-fg: 220 20% 8%;
+  --warn: 38 92% 60%;
+  --info: 217 91% 70%;
+  --danger: 0 72% 60%;
+  --success: 142 60% 48%;
+}
+
 html {
-  background: #08090d;
+  background: hsl(var(--bg));
+  color-scheme: light;
+}
+html.dark {
   color-scheme: dark;
 }
 
 body {
-  background:
-    radial-gradient(1200px 600px at 80% -10%, rgba(95, 215, 168, 0.06) 0%, transparent 60%),
-    radial-gradient(900px 500px at -10% 110%, rgba(159, 179, 255, 0.04) 0%, transparent 60%),
-    #08090d;
-  color: #f5f6f9;
+  background: hsl(var(--bg));
+  color: hsl(var(--fg));
   font-family: "Switzer", "Inter", system-ui, sans-serif;
   font-feature-settings: "ss01", "ss02", "cv11";
+  font-size: 13px;
+  line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -29,21 +96,34 @@ body {
   font-feature-settings: "tnum", "lnum";
 }
 
-.hairline {
-  border-color: rgba(255, 255, 255, 0.06);
+.font-serif-body {
+  font-family: "Erode", Georgia, serif;
 }
 
+/* Hairline border helper used by older markup */
+.hairline {
+  border-color: hsl(var(--border));
+}
+
+/* ----------------------------------------------------------------------------
+   Card primitives — denser, subtle border, app-shell radii
+---------------------------------------------------------------------------- */
+
 .card {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 8px;
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
+  border-radius: 10px;
 }
 
 .card-tight {
-  background: rgba(255, 255, 255, 0.025);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: 6px;
+  background: hsl(var(--surface-2));
+  border: 1px solid hsl(var(--border));
+  border-radius: 8px;
 }
+
+/* ----------------------------------------------------------------------------
+   Tables — SaaS density
+---------------------------------------------------------------------------- */
 
 table.data {
   border-collapse: separate;
@@ -56,39 +136,124 @@ table.data th {
   font-family: "Switzer", sans-serif;
   font-weight: 600;
   font-size: 10.5px;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: #9aa0ad;
-  background: rgba(255, 255, 255, 0.025);
-  padding: 11px 14px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  color: hsl(var(--muted));
+  background: hsl(var(--surface-2));
+  padding: 8px 12px;
+  border-bottom: 1px solid hsl(var(--border));
+  position: sticky;
+  top: 0;
+  z-index: 1;
 }
 table.data td {
-  padding: 11px 14px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
-  vertical-align: top;
-  color: #cdd1db;
+  padding: 8px 12px;
+  border-bottom: 1px solid hsl(var(--border));
+  vertical-align: middle;
+  color: hsl(var(--fg-2));
+  line-height: 1.4;
 }
 table.data tr:last-child td { border-bottom: none; }
+table.data tbody tr:hover td {
+  background: hsl(var(--surface-2) / 0.6);
+}
 table.data tr.row-emphasis td {
-  background: rgba(95, 215, 168, 0.04);
-  color: #f5f6f9;
+  background: hsl(var(--accent) / 0.06);
+  color: hsl(var(--fg));
   font-weight: 600;
 }
+
+/* ----------------------------------------------------------------------------
+   Inline mono chip (kbd, IDs, counts)
+---------------------------------------------------------------------------- */
 
 .kbd {
   font-family: "Martian Mono", ui-monospace, monospace;
   font-size: 10px;
-  letter-spacing: 0.03em;
-  padding: 3px 8px;
+  letter-spacing: 0.02em;
+  padding: 2px 7px;
   border-radius: 4px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  color: #9aa0ad;
+  background: hsl(var(--surface-2));
+  border: 1px solid hsl(var(--border));
+  color: hsl(var(--muted));
+  line-height: 1.4;
+  display: inline-flex;
+  align-items: center;
 }
 
-a:focus-visible, button:focus-visible {
-  outline: 1px solid #5fd7a8;
+/* ----------------------------------------------------------------------------
+   Focus state
+---------------------------------------------------------------------------- */
+
+a:focus-visible,
+button:focus-visible,
+[role="button"]:focus-visible {
+  outline: 2px solid hsl(var(--ring));
   outline-offset: 2px;
   border-radius: 4px;
+}
+
+/* ----------------------------------------------------------------------------
+   Scrollbars (subtle, themed)
+---------------------------------------------------------------------------- */
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--border-strong));
+  border-radius: 8px;
+  border: 2px solid hsl(var(--bg));
+}
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted));
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* ----------------------------------------------------------------------------
+   App shell helpers
+---------------------------------------------------------------------------- */
+
+.app-sidebar-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 13px;
+  color: hsl(var(--muted));
+  font-weight: 500;
+  position: relative;
+  transition: background 120ms ease, color 120ms ease;
+}
+.app-sidebar-link:hover {
+  background: hsl(var(--surface-2));
+  color: hsl(var(--fg));
+}
+.app-sidebar-link[data-active="true"] {
+  background: hsl(var(--accent) / 0.10);
+  color: hsl(var(--fg));
+}
+.app-sidebar-link[data-active="true"]::before {
+  content: "";
+  position: absolute;
+  left: -10px;
+  top: 6px;
+  bottom: 6px;
+  width: 2px;
+  border-radius: 2px;
+  background: hsl(var(--accent));
+}
+
+.app-sidebar-group-label {
+  font-family: "Switzer", sans-serif;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.10em;
+  color: hsl(var(--dim));
+  font-weight: 600;
+  padding: 0 10px 6px;
 }

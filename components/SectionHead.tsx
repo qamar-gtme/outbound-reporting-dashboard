@@ -12,13 +12,20 @@ const dotColor: Record<string, string> = {
   info: "bg-info",
 };
 
+/**
+ * Page-level header in the SaaS app shell.
+ * Title is a Switzer semibold ~26px (was a giant Sentient editorial display).
+ * Eyebrow + source chip kept for context.
+ */
 export function SectionHead({ eyebrow, title, description, source, accent = "accent" }: Props) {
   return (
-    <div className="mb-8 max-w-3xl">
+    <div className="mb-6 max-w-3xl">
       {eyebrow && (
-        <div className="flex items-center gap-2 mb-3">
+        <div className="flex items-center gap-2 mb-2">
           <span className={`block w-1.5 h-1.5 rounded-full ${dotColor[accent]}`} />
-          <span className="text-[11px] uppercase tracking-[0.16em] text-muted font-medium">{eyebrow}</span>
+          <span className="text-[10.5px] uppercase tracking-[0.14em] text-muted font-medium">
+            {eyebrow}
+          </span>
           {source && (
             <>
               <span className="text-dim">·</span>
@@ -27,11 +34,11 @@ export function SectionHead({ eyebrow, title, description, source, accent = "acc
           )}
         </div>
       )}
-      <h1 className="font-display text-[44px] leading-[1.05] tracking-tightest text-ink font-medium">
+      <h1 className="text-[24px] leading-tight tracking-tight text-foreground font-semibold">
         {title}
       </h1>
       {description && (
-        <p className="text-[15px] leading-relaxed text-ink2 mt-3 max-w-2xl">{description}</p>
+        <p className="text-[13px] leading-relaxed text-ink2 mt-2 max-w-2xl">{description}</p>
       )}
     </div>
   );
@@ -39,8 +46,8 @@ export function SectionHead({ eyebrow, title, description, source, accent = "acc
 
 export function SubHead({ title, hint }: { title: string; hint?: string }) {
   return (
-    <div className="flex items-baseline justify-between mt-12 mb-4 pb-3 border-b border-line">
-      <h2 className="font-display text-[22px] tracking-tight text-ink font-medium">{title}</h2>
+    <div className="flex items-baseline justify-between mt-8 mb-3 pb-2 border-b border-border">
+      <h2 className="text-[14px] tracking-tight text-foreground font-semibold">{title}</h2>
       {hint && <span className="text-[11px] text-dim font-num">{hint}</span>}
     </div>
   );
