@@ -25,6 +25,14 @@ type CoverageRow = {
   reply_rate: number | null;
 };
 
+type CampaignStats = {
+  campaign_id: number;
+  leads: number;
+  sent_count: number;
+  replied_count: number;
+  reply_rate_pct: number | null;
+};
+
 const STATUS_ORDER = ["ACTIVE", "PAUSED", "DRAFTED", "COMPLETED", "ARCHIVED", "STOPPED"];
 
 const statusPill: Record<string, string> = {
@@ -51,10 +59,13 @@ export default async function SmartleadPage({
     ? `smartlead_campaigns?status=eq.${activeFilter}&order=created_at.desc.nullslast`
     : "smartlead_campaigns?order=created_at.desc.nullslast";
 
-  const [campaigns, coverage] = await Promise.all([
+  const [campaigns, coverage, stats] = await Promise.all([
     fetchTable(query) as Promise<Campaign[]>,
     fetchTable("smartlead_campaign_icp_coverage?limit=20000") as Promise<CoverageRow[]>,
+    fetchTable("smartlead_campaign_stats?select=*") as Promise<CampaignStats[]>,
   ]);
+  const statsByCampaign = new Map<number, CampaignStats>();
+  for (const s of stats ?? []) statsByCampaign.set(s.campaign_id, s);
 
   // For status counts in the header we always want the full inventory.
   const all = activeFilter
@@ -139,21 +150,10 @@ export default async function SmartleadPage({
             <tbody>
               {campaigns.map((c) => {
                 const rows = covByCampaign.get(c.id) ?? [];
-                const megaRollup = rows.filter(
-                  (r) => r.sub_slug === "" && r.vertical_slug === "",
-                );
-                const totalLeads = megaRollup.reduce(
-                  (s, r) => s + (r.lead_count || 0),
-                  0,
-                );
-                const totalSent = megaRollup.reduce(
-                  (s, r) => s + (r.sent_count || 0),
-                  0,
-                );
-                const totalReplied = megaRollup.reduce(
-                  (s, r) => s + (r.replied_count || 0),
-                  0,
-                );
+                const s = statsByCampaign.get(c.id);
+                const totalLeads = s?.leads ?? 0;
+                const totalSent = s?.sent_count ?? 0;
+                const totalReplied = s?.replied_count ?? 0;
                 const replyRate =
                   totalSent > 0 ? totalReplied / totalSent : null;
                 return (
