@@ -34,8 +34,8 @@ export default async function HomePage() {
   const sections = [
     { href: "/sdr", title: "US SDR Team", desc: "Salesfinity dials, connects, conversations. HubSpot meetings booked from outbound only.", tone: "accent" as const },
     { href: "/smartlead", title: "Smartlead", desc: "Email outbound. Sent, replies, positive replies. Synced from Smartlead into Supabase.", tone: "warn" as const },
-    { href: "/tam", title: "TAM Coverage", desc: "Total addressable companies vs dials and conversations per industry, sub industry, vertical.", tone: "info" as const },
-    { href: "/tiers", title: "Segmentation Tiers", desc: "27 verticals across three priority tiers. Driven by competitive landscape, not SDR perf data.", tone: "accent" as const },
+    { href: "/tam", title: "TAM Coverage", desc: "18 v3 mega-industries with company counts, dials, conversations. NAICS-anchored, MECE.", tone: "info" as const },
+    { href: "/tiers", title: "Segmentation Tiers", desc: "v3 priority tiers across 18 MECE megas with variable-length persona committees and marketplace flag.", tone: "accent" as const },
     { href: "/copy", title: "Copy Angles", desc: "Per ICP variants, hooks, frameworks, performance tracking.", tone: "accent" as const },
     { href: "/intent", title: "Intent Signals", desc: "64 GTM signals across 17 categories with precision and recall scoring.", tone: "accent" as const },
   ];
