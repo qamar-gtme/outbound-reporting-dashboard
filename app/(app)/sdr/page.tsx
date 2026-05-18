@@ -32,23 +32,29 @@ export default async function SDRPage() {
   return (
     <div>
       <SectionHead
-        eyebrow="Section A"
-        title="US SDR Team"
+        eyebrow="SDR"
+        title="US SDR team"
         description="Salesfinity dialing activity plus HubSpot meetings booked from outbound. Numbers reflect outbound attribution only, not org-wide meeting noise."
         source="Salesfinity + HubSpot"
-        accent="accent"
       />
 
-      <SubHead title="Activity headline" hint={`${p.period_start ?? ""} to ${p.period_end ?? ""}`} />
+      <SubHead
+        title="Activity headline"
+        hint={`${p.period_start ?? ""} to ${p.period_end ?? ""}`}
+      />
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3 mb-6">
-        <Stat n={us.length} label="active US SDRs" />
-        <Stat n={usDials} label="dials" />
-        <Stat n={usConn} label="connects 30s+" />
-        <Stat n={usConv} label="conversations 60s+" />
-        <Stat n={usStrong} label="strong 120s+" />
-        <Stat n={outboundMeetings} label="outbound meetings" hint="US SDR booked" />
-        <Stat n={ps.sdr_owned_deals} label="SDR-sourced deals" />
-        <Stat n={pct(usConv, usDials)} label="conv rate" suffix="%" />
+        <Stat n={us.length} label="Active US SDRs" />
+        <Stat n={usDials} label="Dials" />
+        <Stat n={usConn} label="Connects 30s+" />
+        <Stat n={usConv} label="Conversations 60s+" />
+        <Stat n={usStrong} label="Strong 120s+" />
+        <Stat
+          n={outboundMeetings}
+          label="Outbound meetings"
+          hint="US SDR booked"
+        />
+        <Stat n={ps.sdr_owned_deals} label="Sourced deals" />
+        <Stat n={pct(usConv, usDials)} label="Conv rate" suffix="%" />
       </div>
 
       <SubHead title="Per SDR scorecard" hint="Salesfinity, year to date" />

@@ -35,19 +35,19 @@ export default async function TAMPage() {
   return (
     <div>
       <SectionHead
-        eyebrow="Section C · v3"
-        title="TAM Coverage"
-        description="Hierarchical company-count map across 18 v3 mega industries, sub industries, and verticals. Counts are mid-range Census SUSB pulls; rows still pending the v3 refresh render as `—`."
+        eyebrow="TAM · v3"
+        title="Company-count coverage"
+        description="Hierarchical map across 18 v3 mega industries, sub-industries, and verticals. Counts are mid-range Census SUSB pulls; rows pending the v3 refresh render as `—`."
         source="tam_*"
         accent="info"
       />
 
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-2">
-        <Stat n={totalCos} label="addressable cos US" tone="info" />
-        <Stat n={MEGA_INDUSTRIES.length} label="v3 megas" tone="info" />
-        <Stat n={inds.length} label="L1 industries (DB)" tone="info" />
-        <Stat n={subs.length} label="L2 sub industries" tone="info" />
-        <Stat n={verts.length} label="L3 verticals" tone="info" />
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
+        <Stat n={totalCos} label="Addressable cos US" />
+        <Stat n={MEGA_INDUSTRIES.length} label="v3 megas" />
+        <Stat n={inds.length} label="L1 industries" hint="from DB" />
+        <Stat n={subs.length} label="L2 sub-industries" />
+        <Stat n={verts.length} label="L3 verticals" />
       </div>
 
       <SubHead title="v3 mega coverage" hint="18 MECE rows · `—` = pending Census refresh" />

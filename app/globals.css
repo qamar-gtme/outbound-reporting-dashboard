@@ -106,7 +106,7 @@ body {
 }
 
 /* ----------------------------------------------------------------------------
-   Card primitives — denser, subtle border, app-shell radii
+   Card primitives
 ---------------------------------------------------------------------------- */
 
 .card {
@@ -119,6 +119,18 @@ body {
   background: hsl(var(--surface-2));
   border: 1px solid hsl(var(--border));
   border-radius: 8px;
+}
+
+/* Stat tile — flat but ringed for slight elevation */
+.card-stat {
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
+  border-radius: 10px;
+  box-shadow: inset 0 0 0 1px hsl(var(--border) / 0.4);
+  transition: border-color 150ms ease;
+}
+.card-stat:hover {
+  border-color: hsl(var(--border-strong));
 }
 
 /* ----------------------------------------------------------------------------
@@ -154,6 +166,9 @@ table.data td {
   line-height: 1.4;
 }
 table.data tr:last-child td { border-bottom: none; }
+table.data tbody tr {
+  transition: background-color 120ms ease;
+}
 table.data tbody tr:hover td {
   background: hsl(var(--surface-2) / 0.6);
 }
@@ -161,6 +176,28 @@ table.data tr.row-emphasis td {
   background: hsl(var(--accent) / 0.06);
   color: hsl(var(--fg));
   font-weight: 600;
+}
+/* Numeric cells: mono + right-align convenience class */
+table.data td.num,
+table.data th.num {
+  text-align: right;
+  font-family: "Martian Mono", ui-monospace, monospace;
+  font-feature-settings: "tnum", "lnum";
+}
+
+/* Recessed pill column treatment (status etc) */
+.pill-cell {
+  display: inline-flex;
+  align-items: center;
+  height: 20px;
+  padding: 0 8px;
+  border-radius: 5px;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-family: "Martian Mono", ui-monospace, monospace;
+  box-shadow: inset 0 0 0 1px hsl(var(--border) / 0.6);
 }
 
 /* ----------------------------------------------------------------------------
@@ -182,15 +219,160 @@ table.data tr.row-emphasis td {
 }
 
 /* ----------------------------------------------------------------------------
-   Focus state
+   Buttons
+---------------------------------------------------------------------------- */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 36px;
+  padding: 0 14px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1;
+  font-family: "Switzer", sans-serif;
+  border: 1px solid transparent;
+  background: transparent;
+  color: hsl(var(--fg));
+  cursor: pointer;
+  transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease, opacity 150ms ease;
+  white-space: nowrap;
+}
+.btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.btn-sm {
+  height: 32px;
+  padding: 0 12px;
+  font-size: 12.5px;
+}
+
+.btn-primary {
+  background: hsl(var(--accent));
+  color: hsl(var(--accent-fg));
+  border-color: hsl(var(--accent));
+}
+.btn-primary:hover:not(:disabled) {
+  background: hsl(var(--accent) / 0.92);
+  border-color: hsl(var(--accent) / 0.92);
+}
+
+.btn-secondary {
+  background: transparent;
+  color: hsl(var(--fg));
+  border-color: hsl(var(--border-strong));
+}
+.btn-secondary:hover:not(:disabled) {
+  background: hsl(var(--surface-2));
+  border-color: hsl(var(--border-strong));
+}
+
+.btn-ghost {
+  background: transparent;
+  color: hsl(var(--muted));
+  border-color: transparent;
+}
+.btn-ghost:hover:not(:disabled) {
+  background: hsl(var(--surface-2));
+  color: hsl(var(--fg));
+}
+
+.btn-danger-ghost {
+  background: transparent;
+  color: hsl(var(--fg));
+  border-color: hsl(var(--border-strong));
+}
+.btn-danger-ghost:hover:not(:disabled) {
+  background: hsl(var(--danger) / 0.10);
+  color: hsl(var(--danger));
+  border-color: hsl(var(--danger) / 0.40);
+}
+
+/* ----------------------------------------------------------------------------
+   Inputs
+---------------------------------------------------------------------------- */
+
+.input,
+.textarea {
+  width: 100%;
+  height: 36px;
+  padding: 0 12px;
+  background: hsl(var(--surface));
+  color: hsl(var(--fg));
+  font-size: 13px;
+  font-family: "Switzer", sans-serif;
+  border: 1px solid hsl(var(--border));
+  border-radius: 6px;
+  transition: border-color 120ms ease, box-shadow 120ms ease, background-color 120ms ease;
+}
+.textarea {
+  height: auto;
+  min-height: 80px;
+  padding: 10px 12px;
+  line-height: 1.5;
+}
+.input::placeholder,
+.textarea::placeholder {
+  color: hsl(var(--dim));
+}
+.input:hover,
+.textarea:hover {
+  border-color: hsl(var(--border-strong));
+}
+.input:focus,
+.textarea:focus {
+  outline: none;
+  border-color: hsl(var(--ring));
+  box-shadow: 0 0 0 3px hsl(var(--ring) / 0.18);
+}
+.dark .input,
+.dark .textarea {
+  background: hsl(var(--surface-2));
+}
+
+/* ----------------------------------------------------------------------------
+   Badges / pills
+---------------------------------------------------------------------------- */
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  height: 20px;
+  padding: 0 8px;
+  border-radius: 5px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-family: "Martian Mono", ui-monospace, monospace;
+  border: 1px solid transparent;
+  white-space: nowrap;
+  line-height: 1;
+}
+.badge-md {
+  height: 24px;
+  padding: 0 9px;
+}
+
+/* ----------------------------------------------------------------------------
+   Focus state — visible ring matching brand
 ---------------------------------------------------------------------------- */
 
 a:focus-visible,
 button:focus-visible,
-[role="button"]:focus-visible {
+[role="button"]:focus-visible,
+[role="radio"]:focus-visible {
   outline: 2px solid hsl(var(--ring));
   outline-offset: 2px;
   border-radius: 4px;
+}
+.input:focus-visible,
+.textarea:focus-visible {
+  outline: none;
 }
 
 /* ----------------------------------------------------------------------------
@@ -227,14 +409,14 @@ button:focus-visible,
   color: hsl(var(--muted));
   font-weight: 500;
   position: relative;
-  transition: background 120ms ease, color 120ms ease;
+  transition: background-color 150ms ease, color 150ms ease;
 }
 .app-sidebar-link:hover {
   background: hsl(var(--surface-2));
   color: hsl(var(--fg));
 }
 .app-sidebar-link[data-active="true"] {
-  background: hsl(var(--accent) / 0.10);
+  background: hsl(var(--accent) / 0.08);
   color: hsl(var(--fg));
 }
 .app-sidebar-link[data-active="true"]::before {
@@ -249,11 +431,35 @@ button:focus-visible,
 }
 
 .app-sidebar-group-label {
-  font-family: "Switzer", sans-serif;
-  font-size: 10px;
+  font-family: "Martian Mono", ui-monospace, monospace;
+  font-size: 9.5px;
   text-transform: uppercase;
-  letter-spacing: 0.10em;
+  letter-spacing: 0.14em;
   color: hsl(var(--dim));
+  font-weight: 500;
+  padding: 0 10px 8px;
+}
+
+/* ----------------------------------------------------------------------------
+   Empty state
+---------------------------------------------------------------------------- */
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 24px;
+  text-align: center;
+  color: hsl(var(--muted));
+}
+.empty-state .empty-state-title {
+  font-size: 13px;
   font-weight: 600;
-  padding: 0 10px 6px;
+  color: hsl(var(--fg-2));
+  margin-bottom: 4px;
+}
+.empty-state .empty-state-hint {
+  font-size: 12px;
+  color: hsl(var(--dim));
 }

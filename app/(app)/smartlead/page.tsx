@@ -28,12 +28,12 @@ type CoverageRow = {
 const STATUS_ORDER = ["ACTIVE", "PAUSED", "DRAFTED", "COMPLETED", "ARCHIVED", "STOPPED"];
 
 const statusPill: Record<string, string> = {
-  ACTIVE: "bg-accent/15 text-accent border-accent/30",
-  PAUSED: "bg-warn/15 text-warn border-warn/30",
-  DRAFTED: "bg-muted/20 text-muted border-muted/30",
-  COMPLETED: "bg-info/15 text-info border-info/30",
-  ARCHIVED: "bg-dim/20 text-dim border-dim/30",
-  STOPPED: "bg-loss/15 text-loss border-loss/30",
+  ACTIVE: "bg-accent/12 text-accent",
+  PAUSED: "bg-warn/15 text-warn",
+  DRAFTED: "bg-surface2 text-muted",
+  COMPLETED: "bg-info/15 text-info",
+  ARCHIVED: "bg-surface2 text-dim",
+  STOPPED: "bg-danger/12 text-danger",
 };
 
 const ALLOWED_FILTER = new Set(STATUS_ORDER);
@@ -81,57 +81,81 @@ export default async function SmartleadPage({
   return (
     <div>
       <SectionHead
-        eyebrow="Section B · Smartlead"
-        title="Campaign inventory."
-        description="Every Smartlead campaign in the open.cx account — active, paused, drafted, completed, archived. Synced from server.smartlead.ai into Supabase and read live by the dashboard."
+        eyebrow="Smartlead"
+        title="Campaigns"
+        description="Every Smartlead campaign in the open.cx account, classified to the v3 taxonomy. Expand a row to see lead counts and reply rate by mega-industry."
         source="smartlead_campaigns"
-        accent="warn"
+        actions={
+          <Link
+            href="/smartlead/icp"
+            className="btn btn-sm btn-secondary"
+            aria-label="Open ICP and TAM coverage matrix"
+          >
+            ICP / TAM coverage →
+          </Link>
+        }
       />
 
-      <div className="mb-6 flex flex-wrap items-center gap-2 text-[12px]">
-        <FilterChip label={`${total.toLocaleString()} total`} href="/smartlead" active={!activeFilter} />
-        {STATUS_ORDER.filter((s) => counts[s]).map((s) => (
+      {/* Sticky filter bar */}
+      <div className="sticky top-14 z-10 -mx-6 lg:-mx-8 px-6 lg:px-8 py-3 mb-4 bg-background/85 backdrop-blur supports-[backdrop-filter]:bg-background/70 border-b border-border">
+        <div className="flex flex-wrap items-center gap-2">
+          <SearchStub />
+          <span className="hidden md:block h-5 w-px bg-border mx-1" />
           <FilterChip
-            key={s}
-            label={`${counts[s].toLocaleString()} ${s.toLowerCase()}`}
-            href={`/smartlead?status=${s}`}
-            active={activeFilter === s}
-            tone={s}
+            label={`All · ${total.toLocaleString()}`}
+            href="/smartlead"
+            active={!activeFilter}
           />
-        ))}
-        <Link
-          href="/smartlead/icp"
-          className="ml-auto px-3 py-1 rounded border border-accent/30 text-accent text-[11px] font-num uppercase tracking-[0.08em] hover:bg-accent/10 transition-colors"
-        >
-          ICP / TAM coverage →
-        </Link>
+          {STATUS_ORDER.filter((s) => counts[s]).map((s) => (
+            <FilterChip
+              key={s}
+              label={`${s} · ${counts[s].toLocaleString()}`}
+              href={`/smartlead?status=${s}`}
+              active={activeFilter === s}
+              tone={s}
+            />
+          ))}
+          <div className="ml-auto text-[11px] text-dim font-num hidden md:block">
+            Last sync · {latestSync ? relativeTime(latestSync) : "never"}
+          </div>
+        </div>
       </div>
 
       <div className="card overflow-hidden mb-3">
-        <table className="data">
-          <thead>
-            <tr>
-              <th></th>
-              <th>Name</th>
-              <th>Status</th>
-              <th>Created</th>
-              <th>Start</th>
-              <th className="text-right">Leads</th>
-              <th className="text-right">Reply rate</th>
-              <th className="text-right">Campaign ID</th>
-            </tr>
-          </thead>
-          <tbody>
-            {campaigns.length ? (
-              campaigns.map((c) => {
+        {campaigns.length ? (
+          <table className="data">
+            <thead>
+              <tr>
+                <th aria-label="expand" className="w-6"></th>
+                <th>Name</th>
+                <th>Status</th>
+                <th>Created</th>
+                <th>Start</th>
+                <th className="text-right">Leads</th>
+                <th className="text-right">Reply rate</th>
+                <th className="text-right">Campaign ID</th>
+              </tr>
+            </thead>
+            <tbody>
+              {campaigns.map((c) => {
                 const rows = covByCampaign.get(c.id) ?? [];
                 const megaRollup = rows.filter(
                   (r) => r.sub_slug === "" && r.vertical_slug === "",
                 );
-                const totalLeads = megaRollup.reduce((s, r) => s + (r.lead_count || 0), 0);
-                const totalSent = megaRollup.reduce((s, r) => s + (r.sent_count || 0), 0);
-                const totalReplied = megaRollup.reduce((s, r) => s + (r.replied_count || 0), 0);
-                const replyRate = totalSent > 0 ? totalReplied / totalSent : null;
+                const totalLeads = megaRollup.reduce(
+                  (s, r) => s + (r.lead_count || 0),
+                  0,
+                );
+                const totalSent = megaRollup.reduce(
+                  (s, r) => s + (r.sent_count || 0),
+                  0,
+                );
+                const totalReplied = megaRollup.reduce(
+                  (s, r) => s + (r.replied_count || 0),
+                  0,
+                );
+                const replyRate =
+                  totalSent > 0 ? totalReplied / totalSent : null;
                 return (
                   <CampaignRow
                     key={c.id}
@@ -143,25 +167,65 @@ export default async function SmartleadPage({
                     coverage={rows}
                   />
                 );
-              })
-            ) : (
-              <tr>
-                <td colSpan={8} className="text-dim italic text-center py-10">
-                  {activeFilter
-                    ? `No campaigns with status ${activeFilter}.`
-                    : "No campaigns synced yet. Run `npm run sync:smartlead` to populate."}
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+              })}
+            </tbody>
+          </table>
+        ) : (
+          <div className="empty-state">
+            <div className="empty-state-title">
+              {activeFilter
+                ? `No campaigns with status ${activeFilter}`
+                : "No campaigns synced yet"}
+            </div>
+            <div className="empty-state-hint">
+              {activeFilter ? (
+                <>Try a different filter or clear it.</>
+              ) : (
+                <>
+                  Run <code className="kbd">npm run sync:smartlead</code> to
+                  populate.
+                </>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="text-[11px] text-dim font-num">
         Last synced: {latestSync ? relativeTime(latestSync) : "never"}
-        {latestSync && <span className="text-dim/70"> · {fmtDateTime(latestSync)}</span>}
+        {latestSync && (
+          <span className="text-dim/70"> · {fmtDateTime(latestSync)}</span>
+        )}
       </div>
     </div>
+  );
+}
+
+function SearchStub() {
+  return (
+    <label className="relative flex items-center min-w-[200px] sm:min-w-[260px]">
+      <span className="absolute left-2.5 text-dim pointer-events-none">
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.75"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          className="h-3.5 w-3.5"
+        >
+          <circle cx="11" cy="11" r="7" />
+          <path d="m20 20-3.5-3.5" />
+        </svg>
+      </span>
+      <input
+        type="search"
+        placeholder="Search campaigns…"
+        disabled
+        className="input pl-8 h-8 text-[12px] disabled:bg-surface2/60 disabled:cursor-not-allowed"
+        aria-label="Search campaigns (coming soon)"
+      />
+    </label>
   );
 }
 
@@ -181,11 +245,6 @@ function CampaignRow({
   coverage: CoverageRow[];
 }) {
   const hasCoverage = leadCount > 0;
-  // We render as <details>/<summary> with one row of <tr> per state.
-  // Since <details> can't span <tr>s, we use a single <tr> with an interactive
-  // button that anchor-links to a row below — or just render the expansion as
-  // an additional <tr> always visible when there's coverage. Simpler: always
-  // show expansion row when coverage exists.
   return (
     <>
       <tr>
@@ -193,17 +252,23 @@ function CampaignRow({
         <td className="font-medium text-ink">{c.name || "·"}</td>
         <td>
           <span
-            className={`inline-flex items-center px-2 py-0.5 rounded border text-[10.5px] uppercase tracking-[0.08em] font-medium font-num ${
-              statusPill[c.status] ?? "bg-muted/15 text-muted border-muted/30"
-            }`}
+            className={`pill-cell ${statusPill[c.status] ?? "bg-surface2 text-muted"}`}
           >
             {c.status}
           </span>
         </td>
-        <td className="font-num text-muted text-[12px]">{fmtDate(c.created_at)}</td>
-        <td className="font-num text-muted text-[12px]">{fmtDate(c.start_date)}</td>
-        <td className="text-right font-num text-ink2 text-[12px]">{leadCount ? leadCount.toLocaleString() : "—"}</td>
-        <td className="text-right font-num text-ink2 text-[12px]">{fmtRate(replyRate)}</td>
+        <td className="font-num text-muted text-[12px]">
+          {fmtDate(c.created_at)}
+        </td>
+        <td className="font-num text-muted text-[12px]">
+          {fmtDate(c.start_date)}
+        </td>
+        <td className="text-right font-num text-ink2 text-[12px]">
+          {leadCount ? leadCount.toLocaleString() : "—"}
+        </td>
+        <td className="text-right font-num text-ink2 text-[12px]">
+          {fmtRate(replyRate)}
+        </td>
         <td className="text-right font-num text-dim text-[11px]">{c.id}</td>
       </tr>
       {hasCoverage && (
@@ -234,7 +299,6 @@ function CampaignIcpDetail({
   totalSent: number;
   totalReplied: number;
 }) {
-  // Use the vertical rows only for the per-vertical breakdown.
   const verticalRows = coverage.filter(
     (r) => r.vertical_slug !== "" && r.sub_slug !== "",
   );
@@ -245,58 +309,73 @@ function CampaignIcpDetail({
     .filter((r) => (r.sent_count ?? 0) > 10)
     .sort(
       (a, b) =>
-        (b.reply_rate ?? 0) - (a.reply_rate ?? 0) || b.replied_count - a.replied_count,
+        (b.reply_rate ?? 0) - (a.reply_rate ?? 0) ||
+        b.replied_count - a.replied_count,
     )
     .slice(0, 3);
 
   const overall = totalSent > 0 ? totalReplied / totalSent : null;
   return (
     <div className="card-tight px-4 py-3">
-      <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-[11.5px] font-num text-ink2 mb-3">
-        <span>
-          <span className="text-dim">leads</span> {totalLeads.toLocaleString()}
-        </span>
-        <span>
-          <span className="text-dim">sent</span> {totalSent.toLocaleString()}
-        </span>
-        <span>
-          <span className="text-dim">replied</span> {totalReplied.toLocaleString()}
-        </span>
-        <span>
-          <span className="text-dim">reply rate</span>{" "}
-          <span className="text-accent">{fmtRate(overall)}</span>
-        </span>
+      {/* Funnel chips */}
+      <div className="flex flex-wrap items-center gap-1.5 mb-3">
+        <FunnelChip label="leads" value={totalLeads.toLocaleString()} />
+        <FunnelChip label="sent" value={totalSent.toLocaleString()} tone="info" />
+        <FunnelChip
+          label="replied"
+          value={totalReplied.toLocaleString()}
+          tone="accent"
+        />
+        <FunnelChip
+          label="reply rate"
+          value={fmtRate(overall)}
+          tone="accent"
+          emphasize
+        />
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         <div>
-          <div className="text-[10px] uppercase tracking-[0.12em] text-muted mb-2">
+          <div className="text-[10px] uppercase tracking-[0.12em] text-muted mb-2 font-medium">
             Top 5 verticals · by lead count
           </div>
           {topByCount.length ? (
-            <ul className="space-y-1">
-              {topByCount.map((r) => (
-                <li
-                  key={r.mega_slug + r.sub_slug + r.vertical_slug}
-                  className="flex items-baseline justify-between text-[12px]"
-                >
-                  <span className="text-ink2 truncate pr-3">
-                    <span className="text-dim">{r.mega_slug}/</span>
-                    {r.vertical_slug}
-                  </span>
-                  <span className="font-num text-ink shrink-0">
-                    {r.lead_count.toLocaleString()}
-                    <span className="text-dim"> · </span>
-                    <span className="text-muted">{fmtRate(r.reply_rate)}</span>
-                  </span>
-                </li>
-              ))}
+            <ul className="space-y-1.5">
+              {topByCount.map((r) => {
+                const pct = totalLeads > 0 ? (r.lead_count / totalLeads) * 100 : 0;
+                return (
+                  <li
+                    key={r.mega_slug + r.sub_slug + r.vertical_slug}
+                    className="text-[12px]"
+                  >
+                    <div className="flex items-baseline justify-between mb-0.5">
+                      <span className="text-ink2 truncate pr-3">
+                        <span className="text-dim">{r.mega_slug}/</span>
+                        {r.vertical_slug}
+                      </span>
+                      <span className="font-num text-ink shrink-0">
+                        {r.lead_count.toLocaleString()}
+                        <span className="text-dim"> · </span>
+                        <span className="text-muted">{fmtRate(r.reply_rate)}</span>
+                      </span>
+                    </div>
+                    <div className="h-[2px] rounded-full bg-surface3 overflow-hidden">
+                      <div
+                        className="h-full bg-muted/50"
+                        style={{ width: `${Math.min(100, pct)}%` }}
+                      />
+                    </div>
+                  </li>
+                );
+              })}
             </ul>
           ) : (
-            <div className="text-dim text-[12px] italic">No classifications yet.</div>
+            <div className="text-dim text-[12px] italic">
+              No classifications yet.
+            </div>
           )}
         </div>
         <div>
-          <div className="text-[10px] uppercase tracking-[0.12em] text-muted mb-2">
+          <div className="text-[10px] uppercase tracking-[0.12em] text-muted mb-2 font-medium">
             Top 3 verticals · by reply rate (sent &gt; 10)
           </div>
           {topByReply.length ? (
@@ -313,7 +392,9 @@ function CampaignIcpDetail({
                   <span className="font-num text-ink shrink-0">
                     <span className="text-accent">{fmtRate(r.reply_rate)}</span>
                     <span className="text-dim"> · </span>
-                    <span className="text-muted">{r.replied_count}/{r.sent_count}</span>
+                    <span className="text-muted">
+                      {r.replied_count}/{r.sent_count}
+                    </span>
                   </span>
                 </li>
               ))}
@@ -326,6 +407,34 @@ function CampaignIcpDetail({
         </div>
       </div>
     </div>
+  );
+}
+
+function FunnelChip({
+  label,
+  value,
+  tone,
+  emphasize,
+}: {
+  label: string;
+  value: string;
+  tone?: "accent" | "info";
+  emphasize?: boolean;
+}) {
+  const toneCls = emphasize
+    ? "bg-accent/12 text-accent"
+    : tone === "accent"
+      ? "text-accent"
+      : tone === "info"
+        ? "text-info"
+        : "text-foreground";
+  return (
+    <span className="inline-flex items-center gap-1 rounded-md border border-border bg-surface px-2 py-1 text-[11px]">
+      <span className="text-dim uppercase tracking-[0.08em] text-[9.5px] font-num">
+        {label}
+      </span>
+      <span className={`font-num font-medium ${toneCls}`}>{value}</span>
+    </span>
   );
 }
 
@@ -342,16 +451,18 @@ function FilterChip({
 }) {
   const toneCls = tone ? statusPill[tone] ?? "" : "";
   return (
-    <a
+    <Link
       href={href}
-      className={`px-2.5 py-1 rounded border font-num text-[11px] uppercase tracking-[0.08em] transition-colors ${
+      className={`inline-flex items-center h-7 px-2.5 rounded-md border font-num text-[11px] uppercase tracking-[0.06em] transition-colors ${
         active
-          ? toneCls || "bg-ink/10 text-ink border-ink/30"
-          : "bg-transparent text-muted border-line hover:text-ink hover:border-ink/40"
+          ? toneCls
+            ? `${toneCls} border-current/30`
+            : "bg-foreground/10 text-foreground border-border-strong"
+          : "bg-transparent text-muted border-border hover:text-foreground hover:border-border-strong"
       }`}
     >
       {label}
-    </a>
+    </Link>
   );
 }
 
@@ -359,7 +470,11 @@ function fmtDate(iso: string | null) {
   if (!iso) return "—";
   const d = new Date(iso);
   if (isNaN(d.getTime())) return "—";
-  return d.toLocaleDateString("en-US", { year: "numeric", month: "short", day: "2-digit" });
+  return d.toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "short",
+    day: "2-digit",
+  });
 }
 
 function fmtDateTime(iso: string | null) {

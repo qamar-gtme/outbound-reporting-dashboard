@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase-server";
-import { SectionHead, SubHead } from "@/components/SectionHead";
+import { SectionHead } from "@/components/SectionHead";
 import { ProfileForm } from "./ProfileForm";
 
 export const dynamic = "force-dynamic";
@@ -30,7 +30,8 @@ export default async function ProfilePage() {
 
   const identities = user.identities ?? [];
   const hasPasswordProvider = identities.some((i) => i.provider === "email");
-  const providersFromMeta = (user.app_metadata?.providers as string[] | undefined) ?? [];
+  const providersFromMeta =
+    (user.app_metadata?.providers as string[] | undefined) ?? [];
 
   const providerLabels: string[] = [];
   if (providersFromMeta.includes("email") || hasPasswordProvider) {
@@ -49,33 +50,41 @@ export default async function ProfilePage() {
   return (
     <div>
       <SectionHead
-        eyebrow="Account"
+        eyebrow="Settings"
         title="Profile"
-        description="Your sign-in details, display name, and password. Email changes are handled by an admin."
+        description="Sign-in details, display name, and password. Email changes are handled by an admin."
       />
 
-      <SubHead title="Account" />
-      <div className="card p-6 mb-2 grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-5">
-        <Field label="Email" value={user.email ?? "—"} mono />
-        <Field label="User ID" value={user.id} mono small />
-        <Field label="Account created" value={fmtDate(user.created_at)} />
-        <Field label="Last sign-in" value={fmtDate(user.last_sign_in_at)} />
-        <div className="md:col-span-2">
-          <div className="text-[10.5px] uppercase tracking-[0.14em] text-muted font-medium mb-2">
-            Sign-in methods
+      {/* Account summary */}
+      <section className="card p-5 mb-4 max-w-lg">
+        <h2 className="text-[13px] font-semibold text-foreground mb-4">
+          Account
+        </h2>
+        <dl className="grid grid-cols-1 gap-y-3 text-[13px]">
+          <Field label="Email" value={user.email ?? "—"} mono />
+          <Field label="User ID" value={user.id} mono small />
+          <Field label="Account created" value={fmtDate(user.created_at)} />
+          <Field
+            label="Last sign-in"
+            value={fmtDate(user.last_sign_in_at)}
+          />
+          <div>
+            <dt className="text-[10.5px] uppercase tracking-[0.12em] text-muted font-medium font-num mb-1.5">
+              Sign-in methods
+            </dt>
+            <dd className="flex flex-wrap gap-1.5">
+              {providerLabels.map((p) => (
+                <span
+                  key={p}
+                  className={`kbd ${p === "Magic link" ? "text-info" : "text-accent"}`}
+                >
+                  {p}
+                </span>
+              ))}
+            </dd>
           </div>
-          <div className="flex flex-wrap gap-2">
-            {providerLabels.map((p) => (
-              <span
-                key={p}
-                className={`kbd ${p === "Magic link" ? "text-info" : "text-accent"}`}
-              >
-                {p}
-              </span>
-            ))}
-          </div>
-        </div>
-      </div>
+        </dl>
+      </section>
 
       <ProfileForm
         email={user.email ?? ""}
@@ -98,15 +107,17 @@ function Field({
   small?: boolean;
 }) {
   return (
-    <div>
-      <div className="text-[10.5px] uppercase tracking-[0.14em] text-muted font-medium mb-1.5">
+    <div className="flex items-baseline justify-between gap-4">
+      <dt className="text-[10.5px] uppercase tracking-[0.12em] text-muted font-medium font-num shrink-0">
         {label}
-      </div>
-      <div
-        className={`${mono ? "font-num" : ""} ${small ? "text-[11.5px]" : "text-[13.5px]"} text-ink2 break-all`}
+      </dt>
+      <dd
+        className={`${mono ? "font-num" : ""} ${
+          small ? "text-[11px]" : "text-[12.5px]"
+        } text-ink2 text-right break-all min-w-0`}
       >
         {value}
-      </div>
+      </dd>
     </div>
   );
 }

@@ -45,7 +45,7 @@ export function ThemeToggle() {
             onClick={() => setTheme(o.value)}
             className={`flex h-6 w-7 items-center justify-center rounded-[5px] transition-colors ${
               active
-                ? "bg-card text-foreground shadow-sm"
+                ? "bg-card text-foreground border border-border-strong"
                 : "text-muted hover:text-foreground"
             }`}
           >

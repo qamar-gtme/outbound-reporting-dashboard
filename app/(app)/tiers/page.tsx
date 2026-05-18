@@ -14,8 +14,8 @@ export default async function TiersPage() {
     <div>
       <SectionHead
         eyebrow="Segmentation · v3"
-        title="Priority tiers."
-        description="Verticals tiered by competitive landscape and reasoning, not SDR perf data. v3 lays them across 18 MECE mega-industries with variable-length persona committees (3–7 per vertical) and a horizontal marketplace flag. Empty cells mean the row hasn't migrated yet."
+        title="Priority tiers"
+        description="Verticals tiered by competitive landscape, not SDR perf data. v3 lays them across 18 MECE mega-industries with variable-length persona committees (3–7 per vertical) and a horizontal marketplace flag."
         source="segmentation_tiers"
       />
       <TiersView tiers={tiers as any[]} />

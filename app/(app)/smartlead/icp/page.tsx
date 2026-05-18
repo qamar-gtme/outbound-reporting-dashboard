@@ -26,9 +26,9 @@ const DEPTHS = ["mega", "sub", "vertical"] as const;
 type Depth = (typeof DEPTHS)[number];
 
 const statusPill: Record<string, string> = {
-  ACTIVE: "bg-accent/15 text-accent border-accent/30",
+  ACTIVE: "bg-accent/12 text-accent border-accent/30",
   PAUSED: "bg-warn/15 text-warn border-warn/30",
-  DRAFTED: "bg-muted/20 text-muted border-muted/30",
+  DRAFTED: "bg-surface2 text-muted border-border",
   COMPLETED: "bg-info/15 text-info border-info/30",
 };
 
@@ -107,48 +107,60 @@ export default async function SmartleadIcpPage({
   return (
     <div>
       <SectionHead
-        eyebrow="Section B · Smartlead · ICP coverage"
-        title="ICP / TAM coverage by campaign."
-        description="Every lead in the open.cx Smartlead account is classified to the v3 taxonomy (19 megas / 110 subs / 339 verticals) and rolled up per campaign. Drill from mega → sub → vertical to see where outbound lands and where reply rate is strongest."
+        eyebrow="Smartlead · ICP coverage"
+        title="Coverage by campaign"
+        description="Every lead classified to the v3 taxonomy (19 megas / 110 subs / 339 verticals), rolled up per campaign. Drill from mega → sub → vertical to see where outbound lands and where reply rate is strongest."
         source="smartlead_campaign_icp_coverage"
         accent="accent"
+        actions={
+          <Link
+            href="/smartlead"
+            className="btn btn-sm btn-ghost"
+            aria-label="Back to campaign inventory"
+          >
+            ← Inventory
+          </Link>
+        }
       />
 
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-8">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
         <Stat n={totalCampaignsCovered} label="Campaigns covered" />
         <Stat n={totalLeads} label="Total leads" />
-        <Stat n={totalSent} label="Emails sent" tone="info" />
-        <Stat n={totalReplied} label="Replies" tone="warn" />
+        <Stat n={totalSent} label="Emails sent" />
+        <Stat n={totalReplied} label="Replies" />
         <Stat
           n={overallRate != null ? `${(overallRate * 100).toFixed(2)}%` : "—"}
           label="Reply rate"
-          tone="info"
         />
       </div>
 
-      <div className="flex flex-wrap items-center gap-2 mb-3">
-        <span className="text-[11px] text-muted uppercase tracking-[0.12em] mr-2">Depth:</span>
+      <div className="card-tight px-3 py-2.5 mb-3 flex flex-wrap items-center gap-2">
+        <span className="text-[10px] text-muted uppercase tracking-[0.12em] font-num mr-1">
+          Depth
+        </span>
         {DEPTHS.map((d) => (
           <Link
             key={d}
             href={`/smartlead/icp?depth=${d}${campaignFilter ? `&campaign=${campaignFilter}` : ""}`}
-            className={`px-2.5 py-1 rounded border font-num text-[11px] uppercase tracking-[0.08em] transition-colors ${
+            className={`inline-flex items-center h-7 px-2.5 rounded-md border font-num text-[11px] uppercase tracking-[0.06em] transition-colors ${
               depth === d
-                ? "bg-accent/15 text-accent border-accent/40"
-                : "bg-transparent text-muted border-line hover:text-ink hover:border-ink/40"
+                ? "bg-accent/12 text-accent border-accent/40"
+                : "bg-transparent text-muted border-border hover:text-foreground hover:border-border-strong"
             }`}
           >
             {d}
           </Link>
         ))}
-        <span className="mx-3 text-dim">·</span>
-        <span className="text-[11px] text-muted uppercase tracking-[0.12em] mr-1">Campaign:</span>
+        <span className="mx-2 h-5 w-px bg-border" />
+        <span className="text-[10px] text-muted uppercase tracking-[0.12em] font-num mr-1">
+          Campaign
+        </span>
         <Link
           href={`/smartlead/icp?depth=${depth}`}
-          className={`px-2.5 py-1 rounded border font-num text-[11px] uppercase tracking-[0.08em] transition-colors ${
+          className={`inline-flex items-center h-7 px-2.5 rounded-md border font-num text-[11px] uppercase tracking-[0.06em] transition-colors ${
             !campaignFilter
-              ? "bg-ink/10 text-ink border-ink/30"
-              : "bg-transparent text-muted border-line hover:text-ink hover:border-ink/40"
+              ? "bg-foreground/10 text-foreground border-border-strong"
+              : "bg-transparent text-muted border-border hover:text-foreground hover:border-border-strong"
           }`}
         >
           all
@@ -157,69 +169,91 @@ export default async function SmartleadIcpPage({
           <Link
             key={c.id}
             href={`/smartlead/icp?depth=${depth}&campaign=${c.id}`}
-            className={`px-2.5 py-1 rounded border text-[11px] uppercase tracking-[0.08em] transition-colors max-w-[260px] truncate ${
+            className={`inline-flex items-center h-7 px-2.5 rounded-md border text-[11px] uppercase tracking-[0.06em] transition-colors max-w-[260px] truncate ${
               campaignFilter === c.id
-                ? statusPill[c.status] ?? "bg-ink/10 text-ink border-ink/30"
-                : "bg-transparent text-muted border-line hover:text-ink hover:border-ink/40"
+                ? statusPill[c.status] ?? "bg-foreground/10 text-foreground border-border-strong"
+                : "bg-transparent text-muted border-border hover:text-foreground hover:border-border-strong"
             }`}
             title={c.name}
           >
             {c.name}
           </Link>
         ))}
-        <Link
-          href="/smartlead"
-          className="ml-auto text-[11px] font-num text-dim hover:text-accent uppercase tracking-[0.08em]"
-        >
-          ← back to inventory
-        </Link>
       </div>
 
       <div className="card overflow-x-auto">
-        <table className="data">
-          <thead>
-            <tr>
-              <th className="sticky left-0 bg-surface2/80 backdrop-blur" style={{ minWidth: 320 }}>
-                {depth === "mega" ? "Mega" : depth === "sub" ? "Mega / Sub" : "Mega / Sub / Vertical"}
-              </th>
-              {cols.map((c) => (
-                <th key={c.id} className="text-right" style={{ minWidth: 160 }}>
-                  <div className="truncate max-w-[200px] inline-block align-middle" title={c.name}>
-                    {c.name}
-                  </div>
+        {sortedRowKeys.length ? (
+          <table className="data">
+            <thead>
+              <tr>
+                <th
+                  className="sticky left-0 bg-surface2 z-[2]"
+                  style={{ minWidth: 320 }}
+                >
+                  {depth === "mega"
+                    ? "Mega"
+                    : depth === "sub"
+                      ? "Mega / Sub"
+                      : "Mega / Sub / Vertical"}
                 </th>
-              ))}
-              <th className="text-right" style={{ minWidth: 120 }}>
-                Total
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {sortedRowKeys.length ? (
-              sortedRowKeys.map((k) => {
+                {cols.map((c) => (
+                  <th
+                    key={c.id}
+                    className="text-right"
+                    style={{ minWidth: 160 }}
+                  >
+                    <div
+                      className="truncate max-w-[200px] inline-block align-middle"
+                      title={c.name}
+                    >
+                      {c.name}
+                    </div>
+                  </th>
+                ))}
+                <th className="text-right" style={{ minWidth: 120 }}>
+                  Total
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {sortedRowKeys.map((k) => {
                 const tot = rowTotals.get(k)!;
                 const rate = tot.sent > 0 ? tot.rep / tot.sent : null;
                 return (
                   <tr key={k}>
-                    <td className="sticky left-0 bg-bg/80 backdrop-blur text-ink2">
+                    <td className="sticky left-0 bg-card text-ink2">
                       {labelOf(k)}
                     </td>
                     {cols.map((c) => {
                       const cell = cellByCampaignKey.get(`${c.id}::${k}`);
                       if (!cell) {
                         return (
-                          <td key={c.id} className="text-right text-dim font-num text-[12px]">
+                          <td
+                            key={c.id}
+                            className="text-right text-dim font-num text-[12px]"
+                          >
                             —
                           </td>
                         );
                       }
                       return (
-                        <td key={c.id} className="text-right font-num text-[12px]">
-                          <span className="text-ink">{cell.lead_count.toLocaleString()}</span>
+                        <td
+                          key={c.id}
+                          className="text-right font-num text-[12px]"
+                        >
+                          <span className="text-ink">
+                            {cell.lead_count.toLocaleString()}
+                          </span>
                           {cell.sent_count > 0 && (
                             <span className="text-dim">
                               {" · "}
-                              <span className={cell.reply_rate && cell.reply_rate > 0.02 ? "text-accent" : "text-muted"}>
+                              <span
+                                className={
+                                  cell.reply_rate && cell.reply_rate > 0.02
+                                    ? "text-accent"
+                                    : "text-muted"
+                                }
+                              >
                                 {fmtRate(cell.reply_rate)}
                               </span>
                             </span>
@@ -227,8 +261,10 @@ export default async function SmartleadIcpPage({
                         </td>
                       );
                     })}
-                    <td className="text-right font-num text-[12px] row-emphasis-cell">
-                      <span className="text-ink font-medium">{tot.lead.toLocaleString()}</span>
+                    <td className="text-right font-num text-[12px]">
+                      <span className="text-ink font-medium">
+                        {tot.lead.toLocaleString()}
+                      </span>
                       {tot.sent > 0 && (
                         <span className="text-dim">
                           {" · "}
@@ -238,16 +274,19 @@ export default async function SmartleadIcpPage({
                     </td>
                   </tr>
                 );
-              })
-            ) : (
-              <tr>
-                <td colSpan={cols.length + 2} className="text-dim italic text-center py-10">
-                  No coverage yet. Run <code className="kbd">npm run sync:smartlead-icp</code> to populate.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+              })}
+            </tbody>
+          </table>
+        ) : (
+          <div className="empty-state">
+            <div className="empty-state-title">No ICP classifications yet</div>
+            <div className="empty-state-hint">
+              Run <code className="kbd">npm run sync:smartlead-icp</code> to
+              populate. If the sync completed but the matrix is empty, check the
+              OpenAI quota.
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="mt-4 text-[11px] text-dim font-num">

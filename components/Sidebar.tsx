@@ -90,11 +90,11 @@ export function Sidebar({ email }: { email: string | null }) {
           {collapsed ? (
             <BrandMark />
           ) : (
-            <LogoFull className="h-6 w-auto text-foreground" />
+            <LogoFull className="h-[22px] w-auto text-foreground" />
           )}
         </Link>
         {!collapsed && (
-          <span className="ml-auto font-num text-[9.5px] uppercase tracking-[0.16em] text-dim">
+          <span className="ml-auto font-num text-[9px] uppercase tracking-[0.18em] text-dim">
             outbound
           </span>
         )}
@@ -102,10 +102,12 @@ export function Sidebar({ email }: { email: string | null }) {
 
       {/* Nav groups */}
       <nav className="flex-1 overflow-y-auto px-3 py-4">
-        {NAV.map((group) => (
-          <div key={group.label} className="mb-5">
-            {!collapsed && <div className="app-sidebar-group-label">{group.label}</div>}
-            <ul className="space-y-0.5">
+        {NAV.map((group, gi) => (
+          <div key={group.label} className={gi === 0 ? "mb-5" : "mb-5 mt-1"}>
+            {!collapsed && (
+              <div className="app-sidebar-group-label">{group.label}</div>
+            )}
+            <ul className="space-y-[2px]">
               {group.items.map((item) => {
                 const active = isActive(pathname, item.href);
                 const Icon = item.icon;
@@ -117,8 +119,10 @@ export function Sidebar({ email }: { email: string | null }) {
                       className="app-sidebar-link"
                       title={collapsed ? item.label : undefined}
                     >
-                      <Icon className="h-4 w-4 shrink-0" />
-                      {!collapsed && <span className="truncate">{item.label}</span>}
+                      <Icon className="h-[15px] w-[15px] shrink-0" />
+                      {!collapsed && (
+                        <span className="truncate">{item.label}</span>
+                      )}
                     </Link>
                   </li>
                 );
@@ -134,8 +138,11 @@ export function Sidebar({ email }: { email: string | null }) {
         onClick={() => setCollapsed((c) => !c)}
         className="mx-3 mb-2 flex h-7 items-center justify-center gap-1.5 rounded-md border border-border bg-surface2 text-[11px] text-muted hover:text-foreground hover:border-border-strong transition-colors"
         title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+        aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
       >
-        <ChevronIcon className={`h-3 w-3 transition-transform ${collapsed ? "rotate-180" : ""}`} />
+        <ChevronIcon
+          className={`h-3 w-3 transition-transform ${collapsed ? "rotate-180" : ""}`}
+        />
         {!collapsed && <span>Collapse</span>}
       </button>
 
@@ -146,11 +153,12 @@ export function Sidebar({ email }: { email: string | null }) {
           onClick={() => setMenuOpen((o) => !o)}
           aria-haspopup="menu"
           aria-expanded={menuOpen}
+          aria-label="Account menu"
           className={`flex w-full items-center gap-2.5 rounded-md p-2 text-left transition-colors hover:bg-surface2 ${
             menuOpen ? "bg-surface2" : ""
           }`}
         >
-          <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-accent/15 text-[11px] font-semibold text-accent">
+          <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-accent/15 text-[10.5px] font-semibold font-num text-accent">
             {initials}
           </span>
           {!collapsed && (
@@ -158,17 +166,23 @@ export function Sidebar({ email }: { email: string | null }) {
               <span className="block truncate text-[12.5px] font-medium text-foreground">
                 {email ?? "Signed out"}
               </span>
-              <span className="block truncate text-[11px] text-muted">open.cx</span>
+              <span className="block truncate text-[10.5px] text-muted font-num">
+                open.cx
+              </span>
             </span>
           )}
-          {!collapsed && <DotsIcon className="h-3.5 w-3.5 shrink-0 text-muted" />}
+          {!collapsed && (
+            <ChevronUpDownIcon className="h-3.5 w-3.5 shrink-0 text-dim" />
+          )}
         </button>
 
         {menuOpen && (
           <div
             role="menu"
-            className={`absolute z-40 rounded-md border border-border bg-popover p-1 shadow-lg ${
-              collapsed ? "left-full bottom-0 ml-2 w-44" : "bottom-full left-2 right-2 mb-2"
+            className={`absolute z-40 rounded-md border border-border bg-popover p-1 ${
+              collapsed
+                ? "left-full bottom-0 ml-2 w-44"
+                : "bottom-full left-2 right-2 mb-2"
             }`}
           >
             <Link
@@ -184,7 +198,7 @@ export function Sidebar({ email }: { email: string | null }) {
               <button
                 type="submit"
                 role="menuitem"
-                className="flex w-full items-center gap-2 rounded px-2.5 py-1.5 text-left text-[12.5px] text-foreground hover:bg-danger/10 hover:text-danger"
+                className="flex w-full items-center gap-2 rounded px-2.5 py-1.5 text-left text-[12.5px] text-foreground hover:bg-danger/10 hover:text-danger transition-colors"
               >
                 <SignOutIcon className="h-3.5 w-3.5 text-muted" />
                 Sign out
@@ -290,6 +304,14 @@ function DotsIcon(p: React.SVGProps<SVGSVGElement>) {
       <circle cx="5" cy="12" r="1.5" />
       <circle cx="12" cy="12" r="1.5" />
       <circle cx="19" cy="12" r="1.5" />
+    </svg>
+  );
+}
+function ChevronUpDownIcon(p: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" {...p}>
+      <path d="m7 9 5-5 5 5" />
+      <path d="m7 15 5 5 5-5" />
     </svg>
   );
 }

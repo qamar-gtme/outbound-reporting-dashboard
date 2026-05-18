@@ -79,22 +79,23 @@ export function TiersView({ tiers }: { tiers: TierRow[] }) {
   return (
     <>
       <div className="grid grid-cols-2 md:grid-cols-6 gap-3 mb-6">
-        <Stat n={MEGA_INDUSTRIES.length} label="v3 megas" tone="info" />
-        <Stat n={filtered.length} label="verticals" />
+        <Stat n={MEGA_INDUSTRIES.length} label="v3 megas" />
+        <Stat n={filtered.length} label="Verticals" />
         <Stat n={byTier["Tier 1"].length} label="Tier 1" />
-        <Stat n={byTier["Tier 2"].length} label="Tier 2" tone="warn" />
-        <Stat n={totalPersonas} label="personas mapped" />
-        <Stat n={totalCos} label="addressable cos" tone="info" />
+        <Stat n={byTier["Tier 2"].length} label="Tier 2" />
+        <Stat n={totalPersonas} label="Personas" />
+        <Stat n={totalCos} label="Addressable cos" />
       </div>
 
       {/* Marketplace filter toggle */}
-      <div className="card p-4 mb-10 flex items-center justify-between gap-4 flex-wrap">
-        <div>
-          <div className="text-[13px] text-ink font-medium mb-1">Marketplace filter</div>
+      <div className="card px-4 py-3 mb-8 flex items-center justify-between gap-4 flex-wrap">
+        <div className="min-w-0">
+          <div className="text-[13px] text-foreground font-medium mb-0.5">
+            Marketplace filter
+          </div>
           <div className="text-[12px] text-muted leading-snug max-w-xl">
             Marketplace is a horizontal business-model flag, not a mega-industry row.
-            Toggle to overlay <span className="text-info">is_marketplace</span> across all megas.
-            v3 carries this as a column on verticals/companies so we can filter without double-counting.
+            Overlay <span className="text-info">is_marketplace</span> across all megas.
           </div>
         </div>
         <div className="flex items-center gap-3 shrink-0">
@@ -103,16 +104,19 @@ export function TiersView({ tiers }: { tiers: TierRow[] }) {
           </span>
           <button
             onClick={() => setMarketplaceOnly((v) => !v)}
-            className={`relative inline-flex h-6 w-11 items-center rounded-full transition border ${
+            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors border ${
               marketplaceOnly
                 ? "bg-info/20 border-info/40"
-                : "bg-surface3 border-line2"
+                : "bg-surface3 border-border-strong"
             }`}
             aria-pressed={marketplaceOnly}
+            aria-label="Toggle marketplace filter"
           >
             <span
-              className={`inline-block h-4 w-4 transform rounded-full transition ${
-                marketplaceOnly ? "translate-x-6 bg-info" : "translate-x-1 bg-muted"
+              className={`inline-block h-4 w-4 transform rounded-full transition-transform ${
+                marketplaceOnly
+                  ? "translate-x-6 bg-info"
+                  : "translate-x-1 bg-muted"
               }`}
             />
           </button>
@@ -129,14 +133,14 @@ export function TiersView({ tiers }: { tiers: TierRow[] }) {
         const c = tierColor[tn];
         const cnt = rows.reduce((a, t) => a + (t.est_companies_us || 0), 0);
         return (
-          <section key={tn} className="mb-12">
-            <div className="flex items-baseline justify-between mb-5 pb-3 border-b border-line">
+          <section key={tn} className="mb-10">
+            <div className="flex items-baseline justify-between mt-8 mb-4 pb-2 border-b border-border">
               <div className="flex items-baseline gap-3">
-                <span className={`block w-2.5 h-2.5 rounded-full ${c.bar}`} />
-                <h2 className={`font-display text-[26px] tracking-tight font-medium ${c.text}`}>
+                <span className={`block w-2 h-2 rounded-full ${c.bar}`} />
+                <h2 className={`text-[14px] tracking-tight font-semibold ${c.text}`}>
                   {tn}
                 </h2>
-                <span className="text-[12px] text-dim font-num">
+                <span className="text-[11px] text-dim font-num">
                   {rows.length} verticals · ~{cnt.toLocaleString()} cos
                 </span>
               </div>
@@ -155,24 +159,17 @@ export function TiersView({ tiers }: { tiers: TierRow[] }) {
       })}
 
       {/* v3 mega coverage matrix — shows which canonical megas have data yet */}
-      <section className="mb-12">
-        <div className="flex items-baseline justify-between mb-5 pb-3 border-b border-line">
+      <section className="mb-10">
+        <div className="flex items-baseline justify-between mt-8 mb-4 pb-2 border-b border-border">
           <div className="flex items-baseline gap-3">
-            <span className="block w-2.5 h-2.5 rounded-full bg-info" />
-            <h2 className="font-display text-[26px] tracking-tight font-medium text-info">
+            <span className="block w-2 h-2 rounded-full bg-info" />
+            <h2 className="text-[14px] tracking-tight font-semibold text-info">
               v3 mega coverage
             </h2>
-            <span className="text-[12px] text-dim font-num">
-              18 MECE rows · verticals grouped by canonical mega
+            <span className="text-[11px] text-dim font-num">
+              18 MECE rows · grouped by canonical mega
             </span>
           </div>
-        </div>
-
-        <div className="text-[12px] text-muted mb-4 max-w-2xl leading-relaxed">
-          v2 had ~10 megas with MECE breaks (tech ⊃ fintech, marketplaces-as-row,
-          consumer-services overlapping retail/travel). v3 fixes those: 18 mutually-exclusive
-          rows, fintech demoted to a sub-industry under financial-services, marketplace lifted
-          to a horizontal flag, and 9 previously-missing CX-heavy megas restored.
         </div>
 
         <div className="grid md:grid-cols-2 gap-3">
@@ -182,8 +179,8 @@ export function TiersView({ tiers }: { tiers: TierRow[] }) {
             return (
               <div key={m.key} className="card p-4">
                 <div className="flex items-baseline justify-between gap-3 mb-2">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <div className="font-display text-[16px] tracking-tight text-ink">
+                  <div className="flex items-center gap-2 flex-wrap min-w-0">
+                    <div className="text-[13px] font-semibold tracking-tight text-foreground">
                       {m.label}
                     </div>
                     {m.newInV3 && (
@@ -258,8 +255,10 @@ export function TiersView({ tiers }: { tiers: TierRow[] }) {
         )}
       </section>
 
-      <section className="mt-16 card p-6">
-        <h3 className="font-display text-[18px] text-ink mb-3">Persona legend</h3>
+      <section className="mt-10 card p-5">
+        <h3 className="text-[13px] font-semibold text-foreground mb-3">
+          Persona legend
+        </h3>
         <div className="grid sm:grid-cols-2 md:grid-cols-4 gap-3 text-[12px]">
           <div>
             <span className="text-[8.5px] uppercase tracking-wider font-semibold px-1.5 py-0.5 rounded border border-warn/30 bg-warn/12 text-warn">
@@ -296,47 +295,47 @@ function VerticalCard({ row }: { row: TierRow }) {
   const personas: Persona[] = rawPersonas.map(normalizePersona);
 
   return (
-    <div className="card p-6">
-      <div className="flex items-start justify-between gap-6 mb-4">
-        <div className="flex-1">
+    <div className="card p-5">
+      <div className="flex items-start justify-between gap-6 mb-3">
+        <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap mb-1">
-            <div className="font-display text-[20px] tracking-tight text-ink">
+            <div className="text-[15px] font-semibold tracking-tight text-foreground">
               {row.vertical || "·"}
             </div>
             {row.is_marketplace && <MarketplaceBadge size="xs" />}
             {row.business_model && row.business_model !== "first-party" && (
-              <span className="text-[9px] uppercase tracking-wider font-medium px-1.5 py-0.5 rounded border border-line text-dim bg-surface3 font-num">
+              <span className="text-[9px] uppercase tracking-wider font-medium px-1.5 py-0.5 rounded border border-border text-dim bg-surface2 font-num">
                 {row.business_model}
               </span>
             )}
           </div>
           <div className="text-[12px] text-muted">{row.subindustry || "·"}</div>
         </div>
-        <div className="text-right">
-          <div className="font-num text-[22px] text-accent font-semibold leading-none">
+        <div className="text-right shrink-0">
+          <div className="font-num text-[18px] text-foreground font-semibold leading-none tabular-nums">
             {row.est_companies_us != null
               ? row.est_companies_us.toLocaleString()
               : "—"}
           </div>
-          <div className="text-[10.5px] uppercase tracking-[0.12em] text-dim mt-1">
+          <div className="text-[10px] uppercase tracking-[0.12em] text-dim mt-1 font-num">
             cos US
           </div>
         </div>
       </div>
 
       {row.rationale && (
-        <div className="text-[12.5px] text-ink2 leading-relaxed mb-5 max-w-2xl">
+        <div className="text-[12.5px] text-ink2 leading-relaxed mb-4 max-w-2xl">
           {row.rationale}
         </div>
       )}
 
-      <div className="text-[10.5px] uppercase tracking-[0.14em] text-muted mb-3 font-medium">
+      <div className="text-[10px] uppercase tracking-[0.14em] text-muted mb-3 font-medium font-num">
         Buyer personas{" "}
-        <span className="text-dim font-num normal-case tracking-normal">
+        <span className="text-dim normal-case tracking-normal">
           ({personas.length})
         </span>
         {personas.length === 0 && (
-          <span className="text-dim font-num normal-case tracking-normal italic ml-2">
+          <span className="text-dim normal-case tracking-normal italic ml-2">
             — pending v3 enrichment
           </span>
         )}
@@ -349,12 +348,14 @@ function VerticalCard({ row }: { row: TierRow }) {
         </div>
       )}
 
-      <div className="mt-4 pt-3 border-t border-line flex items-center gap-4 text-[11px] text-dim font-num flex-wrap">
+      <div className="mt-4 pt-3 border-t border-border flex items-center gap-4 text-[11px] text-dim font-num flex-wrap">
         <span>
-          Emp band: <span className="text-muted">{row.emp_band || "·"}</span>
+          Emp band:{" "}
+          <span className="text-muted">{row.emp_band || "·"}</span>
         </span>
         <span>
-          Status: <span className="text-muted">{row.status || "active"}</span>
+          Status:{" "}
+          <span className="text-muted">{row.status || "active"}</span>
         </span>
         {row.is_marketplace && (
           <span>
