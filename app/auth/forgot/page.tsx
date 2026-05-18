@@ -2,9 +2,14 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { createClient } from "@/lib/supabase-browser";
 
 const ALLOWED_DOMAIN = "@open.cx";
+
+type ForgotResponse = {
+  ok: boolean;
+  error?: string;
+  message?: string;
+};
 
 export default function ForgotPage() {
   const [email, setEmail] = useState("");
@@ -15,19 +20,37 @@ export default function ForgotPage() {
     e.preventDefault();
     setErrorMsg("");
     const trimmed = email.trim().toLowerCase();
+
+    // Mirror the server check for instant UX feedback. The server response
+    // is still authoritative — these are not security-bearing checks.
+    if (!trimmed) {
+      setStatus("error");
+      setErrorMsg("Enter your work email.");
+      return;
+    }
     if (!trimmed.endsWith(ALLOWED_DOMAIN)) {
       setStatus("error");
       setErrorMsg("Only @open.cx emails are allowed.");
       return;
     }
+
     setStatus("sending");
-    const supabase = createClient();
-    const { error } = await supabase.auth.resetPasswordForEmail(trimmed, {
-      redirectTo: `${window.location.origin}/auth/callback?next=/auth/reset`,
-    });
-    if (error) {
+    let json: ForgotResponse | null = null;
+    try {
+      const res = await fetch("/api/auth/forgot", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: trimmed }),
+      });
+      json = (await res.json().catch(() => null)) as ForgotResponse | null;
+      if (!res.ok || !json?.ok) {
+        setStatus("error");
+        setErrorMsg(json?.message ?? `Request failed (${res.status}).`);
+        return;
+      }
+    } catch (err) {
       setStatus("error");
-      setErrorMsg(error.message);
+      setErrorMsg(err instanceof Error ? err.message : "Network error.");
       return;
     }
     setStatus("sent");
@@ -44,7 +67,7 @@ export default function ForgotPage() {
 
         <h1 className="font-display text-[34px] tracking-tight text-ink mb-2 leading-tight">Reset password</h1>
         <p className="text-[14px] text-ink2 mb-8 leading-relaxed">
-          Enter your @open.cx email. A reset link will land in your inbox.
+          Enter your @open.cx email. If the account exists, a reset link will land in your inbox.
         </p>
 
         {status === "sent" ? (
