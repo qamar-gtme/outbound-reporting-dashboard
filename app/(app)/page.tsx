@@ -133,10 +133,20 @@ export default async function HomePage() {
       />
 
       {/* KPI grid */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3">
         <Stat n={usDials} label="Dials" />
         <Stat n={usConv} label="Conversations" hint="60s+" />
+        <Stat
+          n={usDials > 0 ? `${((usConv / usDials) * 100).toFixed(2)}%` : "—"}
+          label="Connect rate"
+          hint="Conv / dials"
+        />
         <Stat n={outboundMeetings} label="Meetings" hint="US SDR booked" />
+        <Stat
+          n={usDials > 0 ? `${((outboundMeetings / usDials) * 100).toFixed(2)}%` : "—"}
+          label="Meeting rate"
+          hint="Positive / dials"
+        />
         <Stat n={ps.sdr_owned_deals} label="Sourced deals" />
         <Stat n={sl.total_sent} label="Emails sent" />
         <Stat
@@ -290,7 +300,7 @@ export default async function HomePage() {
         <QuickLink href="/sdr" label="SDR" hint="Dials, meetings" />
         <QuickLink href="/smartlead" label="Smartlead" hint="Campaigns" />
         <QuickLink href="/smartlead/icp" label="ICP coverage" hint="Matrix" />
-        <QuickLink href="/tam" label="TAM" hint="Company counts" />
+        <QuickLink href="/tam" label="SAM" hint="Filtered universe" />
         <QuickLink href="/tiers" label="Tiers" hint="Verticals" />
         <QuickLink href="/intent" label="Intent" hint="Signals" />
       </div>

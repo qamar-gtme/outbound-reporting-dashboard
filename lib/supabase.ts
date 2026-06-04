@@ -39,3 +39,75 @@ export async function fetchTable<T = any>(
   }
   return res.json();
 }
+
+/* ---- ICP Scrape Schedule ------------------------------------------------- */
+
+export type SegmentScheduleRow = {
+  id: number;
+  segment_slug: string;
+  segment_name: string;
+  cron_expression: string;
+  is_active: boolean | null;
+  last_run_id: number | null;
+  last_run_at: string | null;
+  next_run_at: string | null;
+  scrape_config: {
+    mega_slug?: string | null;
+    sub_slug?: string | null;
+    vertical_slugs?: string[] | null;
+    [k: string]: unknown;
+  } | null;
+};
+
+export type SegmentScrapeRunRow = {
+  id: number;
+  segment_slug: string;
+  segment_name: string | null;
+  mega_slug: string | null;
+  sub_slug: string | null;
+  vertical_slugs: string[] | null;
+  status: string;
+  company_count: number | null;
+  dm_count: number | null;
+  verified_phone_count: number | null;
+  pushed_contact_count: number | null;
+  created_task_count: number | null;
+  started_at: string | null;
+  completed_at: string | null;
+  error_log: string | null;
+};
+
+export type SegmentScheduleWithLastRun = SegmentScheduleRow & {
+  last_run: SegmentScrapeRunRow | null;
+};
+
+/**
+ * Fetch the ICP-scrape schedule rows alongside the most-recent run for each.
+ * Tagged with `segment-schedule` so the manual-trigger route can invalidate
+ * via `updateTag('segment-schedule')` (Next 16 Cache Components API).
+ */
+export async function fetchSegmentSchedule(): Promise<
+  SegmentScheduleWithLastRun[]
+> {
+  const [schedules, runs] = await Promise.all([
+    fetchTable<SegmentScheduleRow>(
+      "segment_schedule?select=id,segment_slug,segment_name,cron_expression,is_active,last_run_id,last_run_at,next_run_at,scrape_config&order=segment_name.asc&limit=200",
+    ),
+    // Pull the most recent ~500 runs and pick the latest per slug. Cheap at
+    // this scale and avoids needing a join we can't cleanly express via
+    // PostgREST.
+    fetchTable<SegmentScrapeRunRow>(
+      "segment_scrape_runs?select=id,segment_slug,segment_name,mega_slug,sub_slug,vertical_slugs,status,company_count,dm_count,verified_phone_count,pushed_contact_count,created_task_count,started_at,completed_at,error_log&order=started_at.desc.nullslast&limit=500",
+    ),
+  ]);
+
+  const latestBySlug = new Map<string, SegmentScrapeRunRow>();
+  for (const r of runs) {
+    if (!latestBySlug.has(r.segment_slug)) latestBySlug.set(r.segment_slug, r);
+  }
+
+  return schedules.map((s) => ({
+    ...s,
+    last_run: latestBySlug.get(s.segment_slug) ?? null,
+  }));
+}

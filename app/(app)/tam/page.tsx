@@ -43,22 +43,26 @@ export default async function TAMPage() {
   return (
     <div>
       <SectionHead
-        eyebrow="TAM · v3"
-        title="Company-count coverage"
-        description="Hierarchical map across 18 v3 mega industries, sub-industries, and verticals. Counts are mid-range Census SUSB pulls; rows pending the v3 refresh render as `—`."
+        eyebrow="SAM · v3"
+        title="Filtered universe (SAM / SOM)"
+        description="This is the filtered universe, not the full TAM. The 113K and downstream counts come from a Clay-side ICP filter we are rebuilding on visible criteria (C1 through C10). Until the rebuild lands these numbers are SAM at best, SOM in places. Hierarchical view across 18 v3 mega industries, sub-industries, and verticals. Census SUSB anchors for mid-range counts; rows pending v3 refresh show as `—`."
         source="tam_*"
-        accent="info"
+        accent="warn"
       />
 
+      <div className="mb-6 rounded border border-warn/40 bg-warn/8 px-4 py-3 text-[12px] text-ink2 leading-relaxed">
+        <span className="font-semibold text-warn">Note:</span> The label on this page used to read &ldquo;TAM&rdquo;. It has been changed to &ldquo;SAM / SOM&rdquo; until the C1 through C10 criteria rebuild lands. The 113K Clay-filtered universe is a SAM, not a TAM. Full TAM requires unfiltered industry counts by geography, due in the next rebuild cycle.
+      </div>
+
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
-        <Stat n={totalCos} label="Addressable cos US" />
+        <Stat n={totalCos} label="Filtered cos US (SAM)" hint="Clay-filtered, not full TAM" />
         <Stat n={MEGA_INDUSTRIES.length} label="v3 megas" />
         <Stat n={inds.length} label="L1 industries" hint="from DB" />
         <Stat n={subs.length} label="L2 sub-industries" />
         <Stat n={verts.length} label="L3 verticals" />
       </div>
 
-      <SubHead title="v3 mega coverage" hint="18 MECE rows · `—` = pending Census refresh" />
+      <SubHead title="v3 mega coverage" hint="18 MECE rows · `—` = pending Census refresh · industry-axis only, no business-model collapse" />
       <div className="card overflow-hidden mb-2">
         <table className="data">
           <thead>

@@ -66,7 +66,7 @@ export default async function SDRPage() {
         <Stat n={pct(usConv, usDials)} label="Conv rate" suffix="%" />
       </div>
 
-      <SubHead title="Per SDR scorecard" hint="Salesfinity, year to date" />
+      <SubHead title="Per SDR scorecard" hint="Salesfinity + HubSpot, year to date · Meeting % = positive meetings booked / dials" />
       <div className="card overflow-hidden mb-2">
         <table className="data">
           <thead>
@@ -78,22 +78,31 @@ export default async function SDRPage() {
               <th className="text-right">Conv 60s</th>
               <th className="text-right">Conv %</th>
               <th className="text-right">Strong 120s</th>
-              <th className="text-right">Strong rate</th>
+              <th className="text-right">Meetings</th>
+              <th className="text-right">Meeting %</th>
             </tr>
           </thead>
           <tbody>
-            {us.map((r: any, i: number) => (
-              <tr key={i}>
-                <td className="font-medium text-ink">{r.sdr_name}</td>
-                <td className="text-right font-num">{num(r.total_dials)}</td>
-                <td className="text-right font-num">{num(r.connects_30s)}</td>
-                <td className="text-right font-num text-muted">{pctStr(r.connect_rate)}</td>
-                <td className="text-right font-num">{num(r.conversations_60s)}</td>
-                <td className="text-right font-num text-muted">{pctStr(r.conv_rate)}</td>
-                <td className="text-right font-num">{num(r.strong_120s)}</td>
-                <td className="text-right font-num text-muted">{pctStr(r.conv_to_strong)}</td>
-              </tr>
-            ))}
+            {us.map((r: any, i: number) => {
+              const mtg = usSDRMtgs.find(
+                (m: any) => (m.owner_name || "").includes((r.sdr_name || "").split(" ")[0]),
+              );
+              const mtgCount = mtg?.meetings_count || 0;
+              const mtgRate = r.total_dials > 0 ? (mtgCount / r.total_dials) * 100 : 0;
+              return (
+                <tr key={i}>
+                  <td className="font-medium text-ink">{r.sdr_name}</td>
+                  <td className="text-right font-num">{num(r.total_dials)}</td>
+                  <td className="text-right font-num">{num(r.connects_30s)}</td>
+                  <td className="text-right font-num text-muted">{pctStr(r.connect_rate)}</td>
+                  <td className="text-right font-num">{num(r.conversations_60s)}</td>
+                  <td className="text-right font-num text-muted">{pctStr(r.conv_rate)}</td>
+                  <td className="text-right font-num">{num(r.strong_120s)}</td>
+                  <td className="text-right font-num text-accent font-semibold">{num(mtgCount)}</td>
+                  <td className="text-right font-num text-accent">{mtgRate.toFixed(2)}%</td>
+                </tr>
+              );
+            })}
             <tr className="row-emphasis">
               <td>US team total</td>
               <td className="text-right font-num">{num(usDials)}</td>
@@ -102,7 +111,8 @@ export default async function SDRPage() {
               <td className="text-right font-num">{num(usConv)}</td>
               <td className="text-right font-num">{pct(usConv, usDials)}%</td>
               <td className="text-right font-num">{num(usStrong)}</td>
-              <td className="text-right font-num">{pct(usStrong, usConv)}%</td>
+              <td className="text-right font-num">{num(outboundMeetings)}</td>
+              <td className="text-right font-num">{pct(outboundMeetings, usDials)}%</td>
             </tr>
           </tbody>
         </table>

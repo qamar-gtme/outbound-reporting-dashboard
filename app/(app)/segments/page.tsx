@@ -1,8 +1,13 @@
 import Link from "next/link";
 import { cacheLife, cacheTag } from "next/cache";
-import { fetchTable } from "@/lib/supabase";
+import {
+  fetchTable,
+  fetchSegmentSchedule,
+  type SegmentScheduleWithLastRun,
+} from "@/lib/supabase";
 import { SectionHead } from "@/components/SectionHead";
 import { Stat } from "@/components/Stat";
+import { IcpScrapeStatus } from "@/components/segments/IcpScrapeStatus";
 import { CompanyTable, type Lead } from "./CompanyTable";
 
 /**
@@ -72,6 +77,16 @@ async function loadSegments() {
   return { leads, campaigns, megas, subs, verticals };
 }
 
+async function loadScrapeSchedule(): Promise<SegmentScheduleWithLastRun[]> {
+  "use cache";
+  // Short revalidate so a "Trigger Now" + revalidateTag flip lands fast even
+  // if the route handler's tag invalidation race-loses with an in-flight
+  // render. Tag-based invalidation remains the primary signal.
+  cacheLife({ revalidate: 30, expire: 600 });
+  cacheTag("segment-schedule");
+  return fetchSegmentSchedule();
+}
+
 type SP = {
   mega?: string;
   sub?: string;
@@ -96,7 +111,8 @@ export default async function SegmentsPage({
   const initialSearch = (params.search ?? "").trim();
   const initialPage = Math.max(1, Number(params.page) || 1);
 
-  const { leads, campaigns, megas, subs, verticals } = await loadSegments();
+  const [{ leads, campaigns, megas, subs, verticals }, scrapeSchedules] =
+    await Promise.all([loadSegments(), loadScrapeSchedule()]);
 
   // Build pretty-name lookups (slug → name) from the taxonomy.
   const megaNameBySlug = new Map<string, string>();
@@ -619,6 +635,17 @@ export default async function SegmentsPage({
         10m · v3 taxonomy ({megas.length} megas / {subs.length} subs /{" "}
         {verticals.length} verticals)
       </div>
+
+      {/* ─── ICP Scrape Status — recurring weekly pipeline ───────────────── */}
+      <section className="mt-12">
+        <SectionHead
+          eyebrow="Recurring scrape"
+          title="ICP Scrape Status"
+          description="Every active segment_schedule row + its most recent run. Trigger Now bypasses the weekly cadence and queues a fresh run for the worker pipeline."
+          source="segment_schedule · segment_scrape_runs"
+        />
+        <IcpScrapeStatus schedules={scrapeSchedules} />
+      </section>
     </div>
   );
 }

@@ -4,6 +4,14 @@
     {
       "path": "/api/cron/sync-smartlead",
       "schedule": "0 9 * * *"
+    },
+    {
+      "path": "/api/cron/sync-hubspot",
+      "schedule": "30 9 * * *"
+    },
+    {
+      "path": "/api/cron/segment-scrape",
+      "schedule": "0 13 * * 1"
     }
   ]
 }
